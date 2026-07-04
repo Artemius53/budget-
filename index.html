@@ -574,9 +574,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const budgetDocRef = doc(db, "budget", "shared");
 
-const CATEGORIES = ["Еда","Транспорт","Жильё","Развлечения","Здоровье","Другое"];
+const CATEGORIES = ["Продукты","Кафе/Рестораны","Транспорт","Жильё","Развлечения","Здоровье","Одежда","Электроника","Хозтовары","Для дома","Другое"];
 const INCOME_CATEGORIES = ["Зарплата","Подработка","Подарок","Возврат","Другое"];
-const SHOP_CATEGORIES = ["Продукты","Хозтовары","Аптека","Одежда","Электроника","Для дома","Другое"];
+const SHOP_CATEGORIES = CATEGORIES;
 const PEOPLE = ["Артемий","Дарья"];
 
 let expenses = [];
@@ -672,7 +672,7 @@ function toggleBought(id){
   if(item.bought && item.price && !item.expenseId){
     const eid = newId();
     item.expenseId = eid;
-    expenses.push({ id:eid, amount:item.price, category:'Другое', note:item.name, date:todayStr(), place:'', paymentMethod:'Карта', recurring:'Разовый', person:item.person });
+    expenses.push({ id:eid, amount:item.price, category:item.category||'Другое', note:item.name, date:todayStr(), place:'', paymentMethod:'Карта', recurring:'Разовый', person:item.person });
     expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
   }
   // если сняли отметку — убрать связанный расход
@@ -694,7 +694,7 @@ function setShopPrice(id, price){
     } else {
       const eid = newId();
       item.expenseId = eid;
-      expenses.push({ id:eid, amount:price, category:'Другое', note:item.name, date:todayStr(), place:'', paymentMethod:'Карта', recurring:'Разовый', person:item.person });
+      expenses.push({ id:eid, amount:price, category:item.category||'Другое', note:item.name, date:todayStr(), place:'', paymentMethod:'Карта', recurring:'Разовый', person:item.person });
       expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
     }
   }
