@@ -1,0 +1,917 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Гроссбух">
+<meta name="theme-color" content="#DEE3D6">
+<title>Гроссбух</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #DEE3D6;
+    --paper: #EEF1E9;
+    --line: #C9CFC0;
+    --ink: #1C2B22;
+    --ink-soft: #5B6B5F;
+    --copper: #A6672C;
+    --forest: #2F5233;
+    --rust: #A63A2E;
+  }
+  *{box-sizing:border-box;}
+  html{ -webkit-text-size-adjust: 100%; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, rgba(28,43,34,0.06) 1px, transparent 0);
+    background-size: 18px 18px;
+    display:flex;
+    justify-content:center;
+    padding: max(24px, env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
+    font-family: 'Inter', sans-serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .card{
+    position:relative;
+    width:100%;
+    max-width:440px;
+    background: var(--paper);
+    box-shadow: 0 24px 48px rgba(28,43,34,0.16);
+    padding: 34px 26px 26px;
+  }
+  .card::before, .card::after{
+    content:'';
+    position:absolute;
+    left:0; right:0;
+    height:14px;
+    background: radial-gradient(circle at 10px 7px, var(--bg) 6px, transparent 6.5px);
+    background-size: 20px 14px;
+  }
+  .card::before{ top:-1px; }
+  .card::after{ bottom:-1px; }
+
+  h1{
+    font-family:'Courier Prime', monospace;
+    font-weight:700;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    font-size: 22px;
+    text-align:center;
+    margin: 4px 0 2px;
+  }
+  .sub{
+    text-align:center;
+    font-size:12px;
+    color: var(--ink-soft);
+    letter-spacing: 1px;
+    margin-bottom: 18px;
+  }
+  .sync-status{
+    text-align:center;
+    font-size:10px;
+    color: var(--forest);
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+  }
+  .sync-status.offline{ color: var(--rust); }
+
+  .balance-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 10px 14px;
+    margin-bottom: 16px;
+    background: rgba(28,43,34,0.05);
+    border-radius: 8px;
+    font-size: 13px;
+    color: var(--ink-soft);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .balance-bar .balance-val{
+    font-family:'IBM Plex Mono', monospace;
+    font-size: 18px;
+    font-weight: 600;
+    letter-spacing: 0;
+  }
+  .balance-bar .balance-val.pos{ color: var(--forest); }
+  .balance-bar .balance-val.neg{ color: var(--rust); }
+
+  .tabs{
+    display:flex;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 18px;
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding: 12px 4px;
+    font-family:'Courier Prime', monospace;
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    color: var(--ink-soft);
+    background:none;
+    border:none;
+    cursor:pointer;
+    position:relative;
+    top:2px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab.active{
+    color: var(--ink);
+    border-bottom: 2px solid var(--copper);
+  }
+
+  .budget-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size:13px;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .budget-row input{
+    width:110px;
+    text-align:right;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    border:none;
+    border-bottom:1px dashed var(--line);
+    background:transparent;
+    color: var(--ink);
+    padding:2px 2px 4px;
+  }
+  .budget-row input:focus-visible{ outline: 2px solid var(--copper); outline-offset:2px; }
+
+  form.add{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+    padding: 16px 0 18px;
+    border-top: 1px dashed var(--line);
+    border-bottom: 1px dashed var(--line);
+    margin-bottom: 18px;
+  }
+  form.add .full{ grid-column: 1 / -1; }
+  form.add label{
+    display:block;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color: var(--ink-soft);
+    margin-bottom:4px;
+  }
+  form.add input, form.add select{
+    width:100%;
+    font-family:'Inter', sans-serif;
+    font-size:16px;
+    padding:10px 10px;
+    border:1px solid var(--line);
+    background:#fff;
+    color: var(--ink);
+    border-radius:6px;
+  }
+  form.add input[type="number"]{ font-family:'IBM Plex Mono', monospace; }
+  form.add input:focus-visible, form.add select:focus-visible{
+    outline:2px solid var(--copper); outline-offset:1px;
+  }
+  button.submit{
+    grid-column: 1 / -1;
+    margin-top:4px;
+    background: var(--ink);
+    color: var(--paper);
+    border:none;
+    padding:14px;
+    font-family:'Courier Prime', monospace;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    font-size:14px;
+    cursor:pointer;
+    border-radius:6px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button.submit:hover{ background: var(--forest); }
+  button.submit:focus-visible{ outline:2px solid var(--copper); outline-offset:2px; }
+
+  .list{ min-height: 40px; }
+  .row{
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+    padding: 9px 0;
+    font-size:13px;
+  }
+  .row .date{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color: var(--ink-soft);
+    width:42px;
+    flex-shrink:0;
+  }
+  .row .desc{
+    display:flex;
+    flex-direction:column;
+    flex-shrink:0;
+    max-width:40%;
+  }
+  .row .cat{ font-weight:600; }
+  .row .place{ font-size:11px; color: var(--ink-soft); }
+  .row .note{ font-size:11px; color: var(--ink-soft); font-style:italic; }
+  .row .leader{
+    flex:1;
+    border-bottom: 1px dotted var(--line);
+    margin: 0 4px 4px;
+  }
+  .row .amount{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    flex-shrink:0;
+  }
+  .row .del{
+    background:none;
+    border:none;
+    color: var(--ink-soft);
+    cursor:pointer;
+    font-size:20px;
+    line-height:1;
+    padding:4px 4px 4px 10px;
+    flex-shrink:0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .row .del:hover, .row .del:active{ color: var(--rust); }
+  .row-entry{ padding: 9px 0; }
+  .row-entry + .row-entry{ border-top: 1px solid rgba(28,43,34,0.05); }
+  .date-header{
+    font-family:'Courier Prime', monospace;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color: var(--copper);
+    margin-top:14px;
+    padding-bottom:4px;
+    border-bottom:1px solid var(--line);
+  }
+  .date-header:first-child{ margin-top:0; }
+  .row-meta{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
+    margin-top:3px;
+    padding-left:48px;
+  }
+  .tag{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color: var(--ink-soft);
+    background: rgba(28,43,34,0.06);
+    border-radius:3px;
+    padding:2px 6px;
+  }
+  .tag.recurring{ color: var(--copper); background: rgba(166,103,44,0.12); }
+  .tag.person{ color: var(--forest); background: rgba(47,82,51,0.12); font-weight:600; }
+  .tag.priority-high{ color: var(--rust); background: rgba(166,58,46,0.12); }
+  .tag.priority-mid{ color: var(--copper); background: rgba(166,103,44,0.12); }
+  .tag.priority-low{ color: var(--ink-soft); }
+
+  .buy-btn{
+    margin-left:auto;
+    font-family:'Inter', sans-serif;
+    font-size:11px;
+    color: var(--forest);
+    background: rgba(47,82,51,0.1);
+    border:1px solid rgba(47,82,51,0.3);
+    border-radius:3px;
+    padding:3px 8px;
+    cursor:pointer;
+  }
+  .buy-btn:hover{ background: var(--forest); color: var(--paper); }
+
+  .breakdown{
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+  }
+  .breakdown-title{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color: var(--ink-soft);
+    margin-bottom:8px;
+  }
+  .bd-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    margin-bottom:6px;
+  }
+  .bd-row .bd-label{ width:84px; flex-shrink:0; }
+  .bd-row .bd-bar-track{
+    flex:1;
+    height:6px;
+    background: rgba(28,43,34,0.08);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .bd-row .bd-bar-fill{
+    height:100%;
+    background: var(--copper);
+    border-radius:3px;
+  }
+  .bd-row .bd-amount{
+    font-family:'IBM Plex Mono', monospace;
+    width:64px;
+    text-align:right;
+    flex-shrink:0;
+  }
+
+  .empty{
+    text-align:center;
+    color: var(--ink-soft);
+    font-size:13px;
+    padding: 24px 0;
+  }
+
+  .totals{
+    margin-top: 12px;
+    padding-top: 14px;
+    border-top: 2px solid var(--ink);
+  }
+  .totals .row2{
+    display:flex;
+    justify-content:space-between;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    margin-bottom:4px;
+  }
+  .totals .row2.total{ font-weight:600; font-size:16px; }
+  .totals .row2 .neg{ color: var(--rust); }
+  .totals .row2 .pos{ color: var(--forest); }
+
+  .stamp{
+    position:absolute;
+    right:20px;
+    bottom:70px;
+    border: 3px solid var(--forest);
+    color: var(--forest);
+    font-family:'Courier Prime', monospace;
+    font-weight:700;
+    font-size:12px;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    padding: 6px 10px;
+    transform: rotate(-9deg);
+    opacity:0.85;
+    border-radius:4px;
+    background: rgba(255,255,255,0.4);
+  }
+  .stamp.over{ border-color: var(--rust); color: var(--rust); }
+
+  .reset{
+    display:block;
+    text-align:center;
+    margin-top:18px;
+    font-size:11px;
+    color: var(--ink-soft);
+    background:none;
+    border:none;
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .loading{ text-align:center; padding: 40px 0; color: var(--ink-soft); font-size:13px; }
+
+  .buy-btn{ -webkit-tap-highlight-color: transparent; padding:6px 10px; }
+
+  @media (max-width: 430px){
+    .card{ padding: 28px 18px 22px; }
+    .row{ flex-wrap: wrap; }
+    .row .desc{ max-width: none; flex: 1 1 auto; }
+    .row .leader{ display:none; }
+    .row .amount{ margin-left:auto; }
+    .row-meta{ padding-left: 0; margin-top: 6px; }
+    h1{ font-size: 20px; letter-spacing: 2px; }
+    .buy-btn{ padding:8px 12px; }
+    .tab{ font-size: 11px; letter-spacing: 0.5px; padding: 12px 2px; }
+  }
+</style>
+</head>
+<body>
+  <div class="card" id="card">
+    <div class="loading" id="loading">Подключение к базе данных…</div>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB-laTBbPv7cyPjM_KBtHn1qiLQaCdWFq0",
+  authDomain: "semeynyy-byudzhet.firebaseapp.com",
+  projectId: "semeynyy-byudzhet",
+  storageBucket: "semeynyy-byudzhet.firebasestorage.app",
+  messagingSenderId: "605154328627",
+  appId: "1:605154328627:web:18a256ba9c2240a2156346"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const budgetDocRef = doc(db, "budget", "shared");
+
+const CATEGORIES = ["Еда","Транспорт","Жильё","Развлечения","Здоровье","Другое"];
+const INCOME_CATEGORIES = ["Зарплата","Подработка","Подарок","Возврат","Другое"];
+const PEOPLE = ["Артемий","Дарья"];
+let expenses = [];
+let incomes = [];
+let budgetLimit = null;
+let planned = [];
+let activeTab = 'expenses';
+let connected = false;
+let firstLoad = true;
+
+function fmt(n){
+  return n.toLocaleString('ru-RU', {minimumFractionDigits:0, maximumFractionDigits:2});
+}
+function todayStr(){
+  const d = new Date();
+  return d.toISOString().slice(0,10);
+}
+function tomorrowStr(){
+  const d = new Date();
+  d.setDate(d.getDate()+1);
+  return d.toISOString().slice(0,10);
+}
+function shortDate(iso){
+  const [y,m,d] = iso.split('-');
+  return d+'.'+m;
+}
+function dateLabel(iso){
+  if(iso===todayStr()) return 'Сегодня';
+  if(iso===tomorrowStr()) return 'Завтра';
+  return shortDate(iso);
+}
+function priorityClass(p){
+  if(p==='Высокий') return 'priority-high';
+  if(p==='Средний') return 'priority-mid';
+  return 'priority-low';
+}
+
+onSnapshot(budgetDocRef, (snap)=>{
+  connected = true;
+  if(snap.exists()){
+    const data = snap.data();
+    expenses = data.expenses || [];
+    incomes = data.incomes || [];
+    budgetLimit = (data.budgetLimit === undefined) ? null : data.budgetLimit;
+    planned = data.planned || [];
+  }
+  firstLoad = false;
+  render();
+}, (err)=>{
+  console.error('Ошибка синхронизации', err);
+  connected = false;
+  firstLoad = false;
+  render();
+});
+
+async function saveAll(){
+  try{
+    await setDoc(budgetDocRef, { expenses, incomes, budgetLimit, planned });
+  }catch(e){
+    console.error('Не удалось сохранить данные', e);
+  }
+}
+
+function addExpense(amount, category, note, date, place, paymentMethod, recurring, person){
+  expenses.push({
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    amount, category, note, date, place, paymentMethod, recurring, person
+  });
+  expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
+  saveAll();
+  render();
+}
+function deleteExpense(id){
+  expenses = expenses.filter(e=>e.id!==id);
+  saveAll();
+  render();
+}
+function clearAll(){
+  if(!confirm('Удалить все записи безвозвратно?')) return;
+  expenses = [];
+  saveAll();
+  render();
+}
+
+function addIncome(amount, category, note, date, person){
+  incomes.push({
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    amount, category, note, date, person
+  });
+  incomes.sort((a,b)=> a.date < b.date ? 1 : -1);
+  saveAll();
+  render();
+}
+function deleteIncome(id){
+  incomes = incomes.filter(e=>e.id!==id);
+  saveAll();
+  render();
+}
+
+function addPlanned(name, price, priority, person, date){
+  planned.push({
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    name, price, priority, person, date
+  });
+  planned.sort((a,b)=> a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
+  saveAll();
+  render();
+}
+function deletePlanned(id){
+  planned = planned.filter(p=>p.id!==id);
+  saveAll();
+  render();
+}
+function markPurchased(id){
+  const item = planned.find(p=>p.id===id);
+  if(!item) return;
+  expenses.push({
+    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
+    amount: item.price, category: 'Другое', note: item.name, date: todayStr(),
+    place: '', paymentMethod: 'Карта', recurring: 'Разовый', person: item.person
+  });
+  expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
+  planned = planned.filter(p=>p.id!==id);
+  saveAll();
+  render();
+}
+
+function switchTab(tab){
+  activeTab = tab;
+  render();
+}
+
+function renderExpensesTab(){
+  const total = expenses.reduce((s,e)=>s+e.amount,0);
+  const remaining = budgetLimit!=null ? budgetLimit-total : null;
+
+  let rowsHtml = '';
+  if(expenses.length===0){
+    rowsHtml = '<div class="empty">Пока пусто. Добавьте первую запись ниже.</div>';
+  } else {
+    rowsHtml = expenses.map(e=>`
+      <div class="row-entry">
+        <div class="row">
+          <span class="date">${shortDate(e.date)}</span>
+          <span class="desc">
+            <span class="cat">${e.category}</span>
+            ${e.place? `<span class="place">${e.place}</span>` : ''}
+            ${e.note? `<span class="note">${e.note}</span>` : ''}
+          </span>
+          <span class="leader"></span>
+          <span class="amount">${fmt(e.amount)} ₽</span>
+          <button class="del" data-id="${e.id}" title="Удалить" aria-label="Удалить запись">×</button>
+        </div>
+        <div class="row-meta">
+          ${e.person? `<span class="tag person">${e.person}</span>` : ''}
+          ${e.paymentMethod? `<span class="tag">${e.paymentMethod}</span>` : ''}
+          ${e.recurring==='Регулярный'? `<span class="tag recurring">Регулярный</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  let stampHtml = '';
+  if(budgetLimit!=null && expenses.length>0){
+    const over = remaining < 0;
+    stampHtml = `<div class="stamp ${over?'over':''}">${over? 'Перерасход' : 'В бюджете'}</div>`;
+  }
+
+  let breakdownHtml = '';
+  if(expenses.length>0){
+    const byCategory = {};
+    expenses.forEach(e=>{ byCategory[e.category] = (byCategory[e.category]||0) + e.amount; });
+    const maxVal = Math.max(...Object.values(byCategory));
+    const sorted = Object.entries(byCategory).sort((a,b)=>b[1]-a[1]);
+    breakdownHtml = `
+      <div class="breakdown">
+        <div class="breakdown-title">По категориям</div>
+        ${sorted.map(([cat,val])=>`
+          <div class="bd-row">
+            <span class="bd-label">${cat}</span>
+            <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${(val/maxVal*100).toFixed(0)}%"></span></span>
+            <span class="bd-amount">${fmt(val)} ₽</span>
+          </div>
+        `).join('')}
+      </div>
+    `;
+  }
+
+  return `
+    <div class="budget-row">
+      <span>Месячный лимит</span>
+      <input id="budgetInput" type="number" inputmode="decimal" placeholder="не задан" value="${budgetLimit!=null?budgetLimit:''}">
+    </div>
+
+    <form class="add" id="addForm">
+      <div class="full">
+        <label>Сумма, ₽</label>
+        <input type="number" id="amount" step="0.01" min="0" required>
+      </div>
+      <div>
+        <label>Категория</label>
+        <select id="category">
+          ${CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label>Дата</label>
+        <input type="date" id="date" value="${todayStr()}">
+      </div>
+      <div>
+        <label>Кто платил</label>
+        <select id="person">
+          ${PEOPLE.map(p=>`<option value="${p}">${p}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label>Место/магазин</label>
+        <input type="text" id="place" placeholder="например, Selver">
+      </div>
+      <div>
+        <label>Способ оплаты</label>
+        <select id="paymentMethod">
+          <option value="Карта">Карта</option>
+          <option value="Наличные">Наличные</option>
+        </select>
+      </div>
+      <div class="full">
+        <label>Периодичность</label>
+        <select id="recurring">
+          <option value="Разовый">Разовый</option>
+          <option value="Регулярный">Регулярный</option>
+        </select>
+      </div>
+      <div class="full">
+        <label>Заметка (необязательно)</label>
+        <input type="text" id="note" placeholder="например, кофе с коллегой">
+      </div>
+      <button type="submit" class="submit">Добавить запись</button>
+    </form>
+
+    <div class="list">${rowsHtml}</div>
+    ${breakdownHtml}
+
+    <div class="totals">
+      <div class="row2 total"><span>Итого потрачено</span><span>${fmt(total)} ₽</span></div>
+      ${budgetLimit!=null ? `<div class="row2"><span>Остаток бюджета</span><span class="${remaining<0?'neg':'pos'}">${fmt(remaining)} ₽</span></div>` : ''}
+    </div>
+    ${stampHtml}
+
+    ${expenses.length>0 ? '<button class="reset" id="clearBtn">Очистить всё</button>' : ''}
+  `;
+}
+
+function renderIncomeTab(){
+  const total = incomes.reduce((s,e)=>s+e.amount,0);
+
+  let rowsHtml = '';
+  if(incomes.length===0){
+    rowsHtml = '<div class="empty">Пока пусто. Добавьте первый доход ниже.</div>';
+  } else {
+    rowsHtml = incomes.map(e=>`
+      <div class="row-entry">
+        <div class="row">
+          <span class="date">${shortDate(e.date)}</span>
+          <span class="desc">
+            <span class="cat">${e.category}</span>
+            ${e.note? `<span class="note">${e.note}</span>` : ''}
+          </span>
+          <span class="leader"></span>
+          <span class="amount" style="color:var(--forest)">+${fmt(e.amount)} ₽</span>
+          <button class="del" data-id="${e.id}" title="Удалить" aria-label="Удалить запись">×</button>
+        </div>
+        <div class="row-meta">
+          ${e.person? `<span class="tag person">${e.person}</span>` : ''}
+        </div>
+      </div>
+    `).join('');
+  }
+
+  return `
+    <form class="add" id="incomeForm">
+      <div class="full">
+        <label>Сумма, ₽</label>
+        <input type="number" id="iAmount" step="0.01" min="0" required>
+      </div>
+      <div>
+        <label>Категория</label>
+        <select id="iCategory">
+          ${INCOME_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
+        </select>
+      </div>
+      <div>
+        <label>Дата</label>
+        <input type="date" id="iDate" value="${todayStr()}">
+      </div>
+      <div class="full">
+        <label>Кто получил</label>
+        <select id="iPerson">
+          ${PEOPLE.map(p=>`<option value="${p}">${p}</option>`).join('')}
+        </select>
+      </div>
+      <div class="full">
+        <label>Заметка (необязательно)</label>
+        <input type="text" id="iNote" placeholder="например, аванс за март">
+      </div>
+      <button type="submit" class="submit">Добавить доход</button>
+    </form>
+
+    <div class="list">${rowsHtml}</div>
+
+    <div class="totals">
+      <div class="row2 total"><span>Итого доходов</span><span style="color:var(--forest)">+${fmt(total)} ₽</span></div>
+    </div>
+  `;
+}
+
+function renderPlannedTab(){
+  const totalPlanned = planned.reduce((s,p)=>s+p.price,0);
+
+  let rowsHtml = '';
+  if(planned.length===0){
+    rowsHtml = '<div class="empty">Список пуст. Добавьте то, что планируете купить.</div>';
+  } else {
+    let lastLabel = null;
+    rowsHtml = planned.map(p=>{
+      const label = dateLabel(p.date);
+      const headerHtml = label!==lastLabel ? `<div class="date-header">${label}</div>` : '';
+      lastLabel = label;
+      return `
+        ${headerHtml}
+        <div class="row-entry">
+          <div class="row">
+            <span class="desc" style="max-width:48%">
+              <span class="cat">${p.name}</span>
+            </span>
+            <span class="leader"></span>
+            <span class="amount">${fmt(p.price)} ₽</span>
+            <button class="del" data-id="${p.id}" title="Удалить" aria-label="Удалить из списка">×</button>
+          </div>
+          <div class="row-meta">
+            ${p.person? `<span class="tag person">${p.person}</span>` : ''}
+            <span class="tag ${priorityClass(p.priority)}">${p.priority}</span>
+            <button class="buy-btn" data-id="${p.id}">Куплено → в расходы</button>
+          </div>
+        </div>
+      `;
+    }).join('');
+  }
+
+  return `
+    <form class="add" id="plannedForm">
+      <div class="full">
+        <label>Что купить</label>
+        <input type="text" id="pName" placeholder="например, новый пылесос" required>
+      </div>
+      <div>
+        <label>Примерная цена, ₽</label>
+        <input type="number" id="pPrice" step="0.01" min="0" required>
+      </div>
+      <div>
+        <label>Когда купить</label>
+        <input type="date" id="pDate" value="${todayStr()}">
+      </div>
+      <div>
+        <label>Приоритет</label>
+        <select id="pPriority">
+          <option value="Средний">Средний</option>
+          <option value="Высокий">Высокий</option>
+          <option value="Низкий">Низкий</option>
+        </select>
+      </div>
+      <div class="full">
+        <label>Кто хочет купить</label>
+        <select id="pPerson">
+          ${PEOPLE.map(p=>`<option value="${p}">${p}</option>`).join('')}
+        </select>
+      </div>
+      <button type="submit" class="submit">Добавить в список</button>
+    </form>
+
+    <div class="list">${rowsHtml}</div>
+
+    <div class="totals">
+      <div class="row2 total"><span>Итого запланировано</span><span>${fmt(totalPlanned)} ₽</span></div>
+    </div>
+  `;
+}
+
+function render(){
+  const card = document.getElementById('card');
+
+  if(firstLoad){
+    card.innerHTML = '<div class="loading">Подключение к базе данных…</div>';
+    return;
+  }
+
+  const totalExp = expenses.reduce((s,e)=>s+e.amount,0);
+  const totalInc = incomes.reduce((s,e)=>s+e.amount,0);
+  const balance = totalInc - totalExp;
+
+  card.innerHTML = `
+    <h1>Гроссбух</h1>
+    <div class="sub">семейный бюджет</div>
+    <div class="sync-status ${connected? '' : 'offline'}">${connected? '● синхронизировано' : '○ нет связи с базой'}</div>
+    <div class="balance-bar">
+      <span>Баланс</span>
+      <span class="balance-val ${balance<0?'neg':'pos'}">${balance>=0?'+':''}${fmt(balance)} ₽</span>
+    </div>
+    <div class="tabs">
+      <button class="tab ${activeTab==='expenses'?'active':''}" id="tabExpenses">Расходы</button>
+      <button class="tab ${activeTab==='income'?'active':''}" id="tabIncome">Доходы</button>
+      <button class="tab ${activeTab==='planned'?'active':''}" id="tabPlanned">Покупки</button>
+    </div>
+    ${activeTab==='expenses' ? renderExpensesTab() : activeTab==='income' ? renderIncomeTab() : renderPlannedTab()}
+  `;
+
+  document.getElementById('tabExpenses').addEventListener('click', ()=>switchTab('expenses'));
+  document.getElementById('tabIncome').addEventListener('click', ()=>switchTab('income'));
+  document.getElementById('tabPlanned').addEventListener('click', ()=>switchTab('planned'));
+
+  if(activeTab==='expenses'){
+    document.getElementById('addForm').addEventListener('submit', (ev)=>{
+      ev.preventDefault();
+      const amount = parseFloat(document.getElementById('amount').value);
+      const category = document.getElementById('category').value;
+      const note = document.getElementById('note').value.trim();
+      const date = document.getElementById('date').value || todayStr();
+      const place = document.getElementById('place').value.trim();
+      const paymentMethod = document.getElementById('paymentMethod').value;
+      const recurring = document.getElementById('recurring').value;
+      const person = document.getElementById('person').value;
+      if(!amount || amount<=0) return;
+      addExpense(amount, category, note, date, place, paymentMethod, recurring, person);
+    });
+
+    document.getElementById('budgetInput').addEventListener('change', (ev)=>{
+      const v = parseFloat(ev.target.value);
+      budgetLimit = (ev.target.value==='' || isNaN(v)) ? null : v;
+      saveAll();
+      render();
+    });
+
+    card.querySelectorAll('.del').forEach(btn=>{
+      btn.addEventListener('click', ()=> deleteExpense(btn.dataset.id));
+    });
+
+    const clearBtn = document.getElementById('clearBtn');
+    if(clearBtn) clearBtn.addEventListener('click', clearAll);
+  } else if(activeTab==='income'){
+    document.getElementById('incomeForm').addEventListener('submit', (ev)=>{
+      ev.preventDefault();
+      const amount = parseFloat(document.getElementById('iAmount').value);
+      const category = document.getElementById('iCategory').value;
+      const note = document.getElementById('iNote').value.trim();
+      const date = document.getElementById('iDate').value || todayStr();
+      const person = document.getElementById('iPerson').value;
+      if(!amount || amount<=0) return;
+      addIncome(amount, category, note, date, person);
+    });
+
+    card.querySelectorAll('.del').forEach(btn=>{
+      btn.addEventListener('click', ()=> deleteIncome(btn.dataset.id));
+    });
+  } else {
+    document.getElementById('plannedForm').addEventListener('submit', (ev)=>{
+      ev.preventDefault();
+      const name = document.getElementById('pName').value.trim();
+      const price = parseFloat(document.getElementById('pPrice').value);
+      const priority = document.getElementById('pPriority').value;
+      const person = document.getElementById('pPerson').value;
+      const date = document.getElementById('pDate').value || todayStr();
+      if(!name || !price || price<=0) return;
+      addPlanned(name, price, priority, person, date);
+    });
+
+    card.querySelectorAll('.del').forEach(btn=>{
+      btn.addEventListener('click', ()=> deletePlanned(btn.dataset.id));
+    });
+    card.querySelectorAll('.buy-btn').forEach(btn=>{
+      btn.addEventListener('click', ()=> markPurchased(btn.dataset.id));
+    });
+  }
+}
+</script>
+</body>
+</html>
