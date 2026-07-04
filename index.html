@@ -69,7 +69,7 @@
     font-size:12px;
     color: var(--ink-soft);
     letter-spacing: 1px;
-    margin-bottom: 18px;
+    margin-bottom: 14px;
   }
   .sync-status{
     text-align:center;
@@ -85,19 +85,19 @@
     align-items:center;
     justify-content:space-between;
     padding: 10px 14px;
-    margin-bottom: 16px;
     background: rgba(28,43,34,0.05);
-    border-radius: 8px;
-    font-size: 13px;
+    border-radius:8px;
+    margin-bottom: 14px;
+    font-size:13px;
     color: var(--ink-soft);
-    text-transform: uppercase;
-    letter-spacing: 1px;
+    text-transform:uppercase;
+    letter-spacing:1px;
   }
   .balance-bar .balance-val{
     font-family:'IBM Plex Mono', monospace;
-    font-size: 18px;
-    font-weight: 600;
-    letter-spacing: 0;
+    font-size:17px;
+    font-weight:600;
+    letter-spacing:0;
   }
   .balance-bar .balance-val.pos{ color: var(--forest); }
   .balance-bar .balance-val.neg{ color: var(--rust); }
@@ -110,11 +110,11 @@
   .tab{
     flex:1;
     text-align:center;
-    padding: 12px 4px;
+    padding: 12px 2px;
     font-family:'Courier Prime', monospace;
     font-weight:700;
-    font-size:13px;
-    letter-spacing:1px;
+    font-size:11px;
+    letter-spacing:0.5px;
     text-transform:uppercase;
     color: var(--ink-soft);
     background:none;
@@ -129,6 +129,54 @@
     border-bottom: 2px solid var(--copper);
   }
 
+  .month-nav{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:14px;
+    margin-bottom: 16px;
+  }
+  .month-nav button{
+    background: rgba(28,43,34,0.06);
+    border:none;
+    width:32px; height:32px;
+    border-radius:50%;
+    font-size:16px;
+    color: var(--ink);
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .month-nav button:active{ background: rgba(28,43,34,0.14); }
+  .month-nav .month-label{
+    font-family:'Courier Prime', monospace;
+    font-weight:700;
+    font-size:14px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    min-width:130px;
+    text-align:center;
+  }
+
+  .subtabs{
+    display:flex;
+    gap:8px;
+    margin-bottom:16px;
+  }
+  .subtab{
+    flex:1;
+    text-align:center;
+    padding:7px;
+    font-size:12px;
+    font-weight:600;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:#fff;
+    color: var(--ink-soft);
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .subtab.active{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
   .budget-row{
     display:flex;
     align-items:center;
@@ -142,7 +190,7 @@
     width:110px;
     text-align:right;
     font-family:'IBM Plex Mono', monospace;
-    font-size:14px;
+    font-size:16px;
     border:none;
     border-bottom:1px dashed var(--line);
     background:transparent;
@@ -292,8 +340,9 @@
     background: rgba(47,82,51,0.1);
     border:1px solid rgba(47,82,51,0.3);
     border-radius:3px;
-    padding:3px 8px;
+    padding:6px 10px;
     cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
   }
   .buy-btn:hover{ background: var(--forest); color: var(--paper); }
 
@@ -317,6 +366,7 @@
     margin-bottom:6px;
   }
   .bd-row .bd-label{ width:84px; flex-shrink:0; }
+  .bd-row.top .bd-label{ color: var(--rust); font-weight:600; }
   .bd-row .bd-bar-track{
     flex:1;
     height:6px;
@@ -329,11 +379,36 @@
     background: var(--copper);
     border-radius:3px;
   }
+  .bd-row.top .bd-bar-fill{ background: var(--rust); }
   .bd-row .bd-amount{
     font-family:'IBM Plex Mono', monospace;
     width:64px;
     text-align:right;
     flex-shrink:0;
+  }
+  .bd-row.top .bd-amount{ color: var(--rust); font-weight:600; }
+
+  .totals-box{
+    margin-top:16px;
+    padding:14px;
+    border:2px solid var(--ink);
+    border-radius:8px;
+  }
+  .totals-box .tb-title{
+    font-family:'Courier Prime', monospace;
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    text-align:center;
+    margin-bottom:12px;
+  }
+  .tb-section-title{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color: var(--ink-soft);
+    margin:10px 0 6px;
   }
 
   .empty{
@@ -359,24 +434,99 @@
   .totals .row2 .neg{ color: var(--rust); }
   .totals .row2 .pos{ color: var(--forest); }
 
-  .stamp{
-    position:absolute;
-    right:20px;
-    bottom:70px;
-    border: 3px solid var(--forest);
-    color: var(--forest);
-    font-family:'Courier Prime', monospace;
-    font-weight:700;
-    font-size:12px;
-    letter-spacing:1px;
-    text-transform:uppercase;
-    padding: 6px 10px;
-    transform: rotate(-9deg);
-    opacity:0.85;
-    border-radius:4px;
-    background: rgba(255,255,255,0.4);
+  /* Список покупок */
+  .shop-item{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:11px 10px;
+    border-radius:6px;
+    margin-bottom:7px;
+    border:1px solid var(--line);
+    background:#fff;
   }
-  .stamp.over{ border-color: var(--rust); color: var(--rust); }
+  .shop-item.bought{ background: rgba(47,82,51,0.12); border-color: rgba(47,82,51,0.4); }
+  .shop-item.notbought{ background: rgba(166,58,46,0.09); border-color: rgba(166,58,46,0.35); }
+  .shop-check{
+    width:24px; height:24px;
+    border-radius:50%;
+    border:2px solid var(--ink-soft);
+    flex-shrink:0;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; color:#fff;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shop-item.bought .shop-check{ background: var(--forest); border-color: var(--forest); }
+  .shop-item .shop-name{ flex:1; font-size:14px; }
+  .shop-item.bought .shop-name{ text-decoration: line-through; color: var(--ink-soft); }
+  .shop-item .shop-cat{ font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color: var(--ink-soft); display:block; }
+  .shop-item .shop-price{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:13px;
+    font-weight:600;
+    flex-shrink:0;
+  }
+  .shop-item .shop-price-input{
+    width:76px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    padding:5px 6px;
+    border:1px solid var(--line);
+    border-radius:4px;
+    text-align:right;
+  }
+  .shop-item .del{
+    background:none; border:none; color: var(--ink-soft);
+    cursor:pointer; font-size:20px; padding:0 2px 0 4px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shop-item .del:active{ color: var(--rust); }
+
+  /* Желания / копилка */
+  .wish{
+    padding:14px;
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:8px;
+    margin-bottom:12px;
+  }
+  .wish-head{
+    display:flex; align-items:baseline; gap:8px; margin-bottom:8px;
+  }
+  .wish-name{ font-weight:600; font-size:15px; flex:1; }
+  .wish-price{ font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:14px; }
+  .wish-del{
+    background:none; border:none; color: var(--ink-soft);
+    cursor:pointer; font-size:20px; padding:0 0 0 6px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wish-del:active{ color: var(--rust); }
+  .wish-progress-track{
+    height:10px; background: rgba(28,43,34,0.08);
+    border-radius:5px; overflow:hidden; margin-bottom:6px;
+  }
+  .wish-progress-fill{ height:100%; background: var(--forest); border-radius:5px; transition:width .3s; }
+  .wish-progress-fill.done{ background: var(--copper); }
+  .wish-info{
+    display:flex; justify-content:space-between;
+    font-size:12px; color: var(--ink-soft); margin-bottom:8px;
+  }
+  .wish-saved{ font-family:'IBM Plex Mono', monospace; }
+  .wish-add-row{ display:flex; gap:6px; }
+  .wish-add-row input{
+    flex:1; font-family:'IBM Plex Mono', monospace; font-size:14px;
+    padding:7px 8px; border:1px solid var(--line); border-radius:5px;
+  }
+  .wish-add-row button{
+    background: var(--forest); color:#fff; border:none;
+    border-radius:5px; padding:7px 12px; font-size:13px; cursor:pointer;
+    -webkit-tap-highlight-color: transparent; white-space:nowrap;
+  }
+  .wish-done-badge{
+    display:inline-block; font-size:10px; text-transform:uppercase;
+    letter-spacing:1px; color: var(--copper); font-weight:700; margin-top:4px;
+  }
 
   .reset{
     display:block;
@@ -391,8 +541,6 @@
   }
   .loading{ text-align:center; padding: 40px 0; color: var(--ink-soft); font-size:13px; }
 
-  .buy-btn{ -webkit-tap-highlight-color: transparent; padding:6px 10px; }
-
   @media (max-width: 430px){
     .card{ padding: 28px 18px 22px; }
     .row{ flex-wrap: wrap; }
@@ -401,8 +549,6 @@
     .row .amount{ margin-left:auto; }
     .row-meta{ padding-left: 0; margin-top: 6px; }
     h1{ font-size: 20px; letter-spacing: 2px; }
-    .buy-btn{ padding:8px 12px; }
-    .tab{ font-size: 11px; letter-spacing: 0.5px; padding: 12px 2px; }
   }
 </style>
 </head>
@@ -430,40 +576,43 @@ const budgetDocRef = doc(db, "budget", "shared");
 
 const CATEGORIES = ["Еда","Транспорт","Жильё","Развлечения","Здоровье","Другое"];
 const INCOME_CATEGORIES = ["Зарплата","Подработка","Подарок","Возврат","Другое"];
+const SHOP_CATEGORIES = ["Продукты","Хозтовары","Аптека","Одежда","Электроника","Для дома","Другое"];
 const PEOPLE = ["Артемий","Дарья"];
+
 let expenses = [];
 let incomes = [];
 let budgetLimit = null;
-let planned = [];
-let activeTab = 'expenses';
+let shopping = [];
+let wishes = [];
+
+let activeTab = 'finance';     // finance | shopping | wishes
+let financeSub = 'expenses';   // expenses | income
+let viewMonth = new Date().toISOString().slice(0,7); // YYYY-MM
 let connected = false;
 let firstLoad = true;
 
 function fmt(n){
   return n.toLocaleString('ru-RU', {minimumFractionDigits:0, maximumFractionDigits:2});
 }
-function todayStr(){
-  const d = new Date();
-  return d.toISOString().slice(0,10);
-}
-function tomorrowStr(){
-  const d = new Date();
-  d.setDate(d.getDate()+1);
-  return d.toISOString().slice(0,10);
-}
-function shortDate(iso){
-  const [y,m,d] = iso.split('-');
-  return d+'.'+m;
-}
-function dateLabel(iso){
-  if(iso===todayStr()) return 'Сегодня';
-  if(iso===tomorrowStr()) return 'Завтра';
-  return shortDate(iso);
-}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function shortDate(iso){ const [y,m,d] = iso.split('-'); return d+'.'+m; }
+function monthOf(iso){ return iso ? iso.slice(0,7) : ''; }
 function priorityClass(p){
   if(p==='Высокий') return 'priority-high';
   if(p==='Средний') return 'priority-mid';
   return 'priority-low';
+}
+const MONTH_NAMES = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+function monthLabel(ym){
+  const [y,m] = ym.split('-');
+  return MONTH_NAMES[parseInt(m,10)-1] + ' ' + y;
+}
+function shiftMonth(ym, delta){
+  let [y,m] = ym.split('-').map(Number);
+  m += delta;
+  if(m<1){ m=12; y--; }
+  if(m>12){ m=1; y++; }
+  return y + '-' + String(m).padStart(2,'0');
 }
 
 onSnapshot(budgetDocRef, (snap)=>{
@@ -473,7 +622,8 @@ onSnapshot(budgetDocRef, (snap)=>{
     expenses = data.expenses || [];
     incomes = data.incomes || [];
     budgetLimit = (data.budgetLimit === undefined) ? null : data.budgetLimit;
-    planned = data.planned || [];
+    shopping = data.shopping || [];
+    wishes = data.wishes || [];
   }
   firstLoad = false;
   render();
@@ -486,429 +636,420 @@ onSnapshot(budgetDocRef, (snap)=>{
 
 async function saveAll(){
   try{
-    await setDoc(budgetDocRef, { expenses, incomes, budgetLimit, planned });
-  }catch(e){
-    console.error('Не удалось сохранить данные', e);
-  }
+    await setDoc(budgetDocRef, { expenses, incomes, budgetLimit, shopping, wishes });
+  }catch(e){ console.error('Не удалось сохранить данные', e); }
 }
 
+function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* ---- Расходы ---- */
 function addExpense(amount, category, note, date, place, paymentMethod, recurring, person){
-  expenses.push({
-    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-    amount, category, note, date, place, paymentMethod, recurring, person
-  });
+  expenses.push({ id:newId(), amount, category, note, date, place, paymentMethod, recurring, person });
   expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
-  saveAll();
-  render();
+  saveAll(); render();
 }
-function deleteExpense(id){
-  expenses = expenses.filter(e=>e.id!==id);
-  saveAll();
-  render();
-}
-function clearAll(){
-  if(!confirm('Удалить все записи безвозвратно?')) return;
-  expenses = [];
-  saveAll();
-  render();
-}
+function deleteExpense(id){ expenses = expenses.filter(e=>e.id!==id); saveAll(); render(); }
 
+/* ---- Доходы ---- */
 function addIncome(amount, category, note, date, person){
-  incomes.push({
-    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-    amount, category, note, date, person
-  });
+  incomes.push({ id:newId(), amount, category, note, date, person });
   incomes.sort((a,b)=> a.date < b.date ? 1 : -1);
-  saveAll();
-  render();
+  saveAll(); render();
 }
-function deleteIncome(id){
-  incomes = incomes.filter(e=>e.id!==id);
-  saveAll();
-  render();
-}
+function deleteIncome(id){ incomes = incomes.filter(e=>e.id!==id); saveAll(); render(); }
 
-function addPlanned(name, price, priority, person, date){
-  planned.push({
-    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-    name, price, priority, person, date
-  });
-  planned.sort((a,b)=> a.date < b.date ? -1 : a.date > b.date ? 1 : 0);
-  saveAll();
-  render();
+/* ---- Список покупок ---- */
+function addShopItem(name, category, person){
+  shopping.push({ id:newId(), name, category, person, bought:false, price:null });
+  saveAll(); render();
 }
-function deletePlanned(id){
-  planned = planned.filter(p=>p.id!==id);
-  saveAll();
-  render();
-}
-function markPurchased(id){
-  const item = planned.find(p=>p.id===id);
+function deleteShopItem(id){ shopping = shopping.filter(s=>s.id!==id); saveAll(); render(); }
+function toggleBought(id){
+  const item = shopping.find(s=>s.id===id);
   if(!item) return;
-  expenses.push({
-    id: Date.now().toString(36)+Math.random().toString(36).slice(2,6),
-    amount: item.price, category: 'Другое', note: item.name, date: todayStr(),
-    place: '', paymentMethod: 'Карта', recurring: 'Разовый', person: item.person
-  });
-  expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
-  planned = planned.filter(p=>p.id!==id);
-  saveAll();
-  render();
+  item.bought = !item.bought;
+  // если купили и уже есть цена — добавим в расходы
+  if(item.bought && item.price && !item.expenseId){
+    const eid = newId();
+    item.expenseId = eid;
+    expenses.push({ id:eid, amount:item.price, category:'Другое', note:item.name, date:todayStr(), place:'', paymentMethod:'Карта', recurring:'Разовый', person:item.person });
+    expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
+  }
+  // если сняли отметку — убрать связанный расход
+  if(!item.bought && item.expenseId){
+    expenses = expenses.filter(e=>e.id!==item.expenseId);
+    item.expenseId = null;
+  }
+  saveAll(); render();
+}
+function setShopPrice(id, price){
+  const item = shopping.find(s=>s.id===id);
+  if(!item) return;
+  item.price = price;
+  // если товар уже отмечен купленным — обновим/создадим расход
+  if(item.bought && price){
+    if(item.expenseId){
+      const ex = expenses.find(e=>e.id===item.expenseId);
+      if(ex) ex.amount = price;
+    } else {
+      const eid = newId();
+      item.expenseId = eid;
+      expenses.push({ id:eid, amount:price, category:'Другое', note:item.name, date:todayStr(), place:'', paymentMethod:'Карта', recurring:'Разовый', person:item.person });
+      expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
+    }
+  }
+  saveAll(); render();
+}
+function clearBoughtShop(){
+  if(!confirm('Убрать все купленные товары из списка? (расходы по ним останутся)')) return;
+  shopping = shopping.filter(s=>!s.bought);
+  saveAll(); render();
 }
 
-function switchTab(tab){
-  activeTab = tab;
-  render();
+/* ---- Желания / копилка ---- */
+function addWish(name, target, person){
+  wishes.push({ id:newId(), name, target, saved:0, person });
+  saveAll(); render();
+}
+function deleteWish(id){ wishes = wishes.filter(w=>w.id!==id); saveAll(); render(); }
+function addToWish(id, amount){
+  const w = wishes.find(x=>x.id===id);
+  if(!w) return;
+  w.saved = Math.max(0, (w.saved||0) + amount);
+  saveAll(); render();
 }
 
-function renderExpensesTab(){
-  const total = expenses.reduce((s,e)=>s+e.amount,0);
-  const remaining = budgetLimit!=null ? budgetLimit-total : null;
+function switchTab(tab){ activeTab = tab; render(); }
+function switchSub(sub){ financeSub = sub; render(); }
 
-  let rowsHtml = '';
-  if(expenses.length===0){
-    rowsHtml = '<div class="empty">Пока пусто. Добавьте первую запись ниже.</div>';
-  } else {
-    rowsHtml = expenses.map(e=>`
-      <div class="row-entry">
-        <div class="row">
-          <span class="date">${shortDate(e.date)}</span>
-          <span class="desc">
-            <span class="cat">${e.category}</span>
-            ${e.place? `<span class="place">${e.place}</span>` : ''}
-            ${e.note? `<span class="note">${e.note}</span>` : ''}
-          </span>
-          <span class="leader"></span>
-          <span class="amount">${fmt(e.amount)} ₽</span>
-          <button class="del" data-id="${e.id}" title="Удалить" aria-label="Удалить запись">×</button>
-        </div>
-        <div class="row-meta">
-          ${e.person? `<span class="tag person">${e.person}</span>` : ''}
-          ${e.paymentMethod? `<span class="tag">${e.paymentMethod}</span>` : ''}
-          ${e.recurring==='Регулярный'? `<span class="tag recurring">Регулярный</span>` : ''}
-        </div>
+/* ============ РЕНДЕР: ФИНАНСЫ ============ */
+function renderFinanceTab(){
+  const monthExp = expenses.filter(e=> monthOf(e.date)===viewMonth);
+  const monthInc = incomes.filter(e=> monthOf(e.date)===viewMonth);
+  const totalExp = monthExp.reduce((s,e)=>s+e.amount,0);
+  const totalInc = monthInc.reduce((s,e)=>s+e.amount,0);
+
+  const monthNav = `
+    <div class="month-nav">
+      <button id="prevMonth" aria-label="Предыдущий месяц">‹</button>
+      <span class="month-label">${monthLabel(viewMonth)}</span>
+      <button id="nextMonth" aria-label="Следующий месяц">›</button>
+    </div>
+  `;
+
+  const subtabs = `
+    <div class="subtabs">
+      <div class="subtab ${financeSub==='expenses'?'active':''}" id="subExp">Расходы</div>
+      <div class="subtab ${financeSub==='income'?'active':''}" id="subInc">Доходы</div>
+    </div>
+  `;
+
+  // Плашка ИТОГО — по категориям
+  const expByCat = {};
+  monthExp.forEach(e=>{ expByCat[e.category]=(expByCat[e.category]||0)+e.amount; });
+  const incByCat = {};
+  monthInc.forEach(e=>{ incByCat[e.category]=(incByCat[e.category]||0)+e.amount; });
+
+  const expSorted = Object.entries(expByCat).sort((a,b)=>b[1]-a[1]);
+  const incSorted = Object.entries(incByCat).sort((a,b)=>b[1]-a[1]);
+  const maxExp = expSorted.length? expSorted[0][1] : 0;
+  const maxInc = incSorted.length? incSorted[0][1] : 0;
+
+  const totalsBox = `
+    <div class="totals-box">
+      <div class="tb-title">Итого за ${monthLabel(viewMonth)}</div>
+      <div class="tb-section-title">Расходы — ${fmt(totalExp)} ₽</div>
+      ${expSorted.length? expSorted.map(([cat,val],i)=>`
+        <div class="bd-row ${i===0?'top':''}">
+          <span class="bd-label">${cat}</span>
+          <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${maxExp?(val/maxExp*100).toFixed(0):0}%"></span></span>
+          <span class="bd-amount">${fmt(val)} ₽</span>
+        </div>`).join('') : '<div class="empty" style="padding:8px 0">Нет расходов</div>'}
+      <div class="tb-section-title">Доходы — ${fmt(totalInc)} ₽</div>
+      ${incSorted.length? incSorted.map(([cat,val],i)=>`
+        <div class="bd-row">
+          <span class="bd-label">${cat}</span>
+          <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${maxInc?(val/maxInc*100).toFixed(0):0}%;background:var(--forest)"></span></span>
+          <span class="bd-amount" style="color:var(--forest)">${fmt(val)} ₽</span>
+        </div>`).join('') : '<div class="empty" style="padding:8px 0">Нет доходов</div>'}
+      <div class="totals" style="margin-top:12px">
+        <div class="row2 total"><span>Баланс месяца</span><span class="${(totalInc-totalExp)<0?'neg':'pos'}">${(totalInc-totalExp)>=0?'+':''}${fmt(totalInc-totalExp)} ₽</span></div>
       </div>
-    `).join('');
-  }
+    </div>
+  `;
 
-  let stampHtml = '';
-  if(budgetLimit!=null && expenses.length>0){
-    const over = remaining < 0;
-    stampHtml = `<div class="stamp ${over?'over':''}">${over? 'Перерасход' : 'В бюджете'}</div>`;
-  }
-
-  let breakdownHtml = '';
-  if(expenses.length>0){
-    const byCategory = {};
-    expenses.forEach(e=>{ byCategory[e.category] = (byCategory[e.category]||0) + e.amount; });
-    const maxVal = Math.max(...Object.values(byCategory));
-    const sorted = Object.entries(byCategory).sort((a,b)=>b[1]-a[1]);
-    breakdownHtml = `
-      <div class="breakdown">
-        <div class="breakdown-title">По категориям</div>
-        ${sorted.map(([cat,val])=>`
-          <div class="bd-row">
-            <span class="bd-label">${cat}</span>
-            <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${(val/maxVal*100).toFixed(0)}%"></span></span>
-            <span class="bd-amount">${fmt(val)} ₽</span>
+  let body = '';
+  if(financeSub==='expenses'){
+    let rowsHtml = monthExp.length===0
+      ? '<div class="empty">Нет расходов за этот месяц.</div>'
+      : monthExp.map(e=>`
+        <div class="row-entry">
+          <div class="row">
+            <span class="date">${shortDate(e.date)}</span>
+            <span class="desc">
+              <span class="cat">${e.category}</span>
+              ${e.place? `<span class="place">${e.place}</span>`:''}
+              ${e.note? `<span class="note">${e.note}</span>`:''}
+            </span>
+            <span class="leader"></span>
+            <span class="amount">${fmt(e.amount)} ₽</span>
+            <button class="del" data-del-exp="${e.id}" aria-label="Удалить">×</button>
           </div>
-        `).join('')}
-      </div>
+          <div class="row-meta">
+            ${e.person? `<span class="tag person">${e.person}</span>`:''}
+            ${e.paymentMethod? `<span class="tag">${e.paymentMethod}</span>`:''}
+            ${e.recurring==='Регулярный'? `<span class="tag recurring">Регулярный</span>`:''}
+          </div>
+        </div>`).join('');
+
+    body = `
+      <form class="add" id="addForm">
+        <div class="full"><label>Сумма, ₽</label><input type="number" id="amount" step="0.01" min="0" required></div>
+        <div><label>Категория</label><select id="category">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Дата</label><input type="date" id="date" value="${todayStr()}"></div>
+        <div><label>Кто платил</label><select id="person">${PEOPLE.map(p=>`<option>${p}</option>`).join('')}</select></div>
+        <div><label>Место/магазин</label><input type="text" id="place" placeholder="напр., Пятёрочка"></div>
+        <div><label>Способ оплаты</label><select id="paymentMethod"><option>Карта</option><option>Наличные</option></select></div>
+        <div class="full"><label>Периодичность</label><select id="recurring"><option>Разовый</option><option>Регулярный</option></select></div>
+        <div class="full"><label>Заметка</label><input type="text" id="note" placeholder="необязательно"></div>
+        <button type="submit" class="submit">Добавить расход</button>
+      </form>
+      <div class="list">${rowsHtml}</div>
+    `;
+  } else {
+    let rowsHtml = monthInc.length===0
+      ? '<div class="empty">Нет доходов за этот месяц.</div>'
+      : monthInc.map(e=>`
+        <div class="row-entry">
+          <div class="row">
+            <span class="date">${shortDate(e.date)}</span>
+            <span class="desc">
+              <span class="cat">${e.category}</span>
+              ${e.note? `<span class="note">${e.note}</span>`:''}
+            </span>
+            <span class="leader"></span>
+            <span class="amount" style="color:var(--forest)">+${fmt(e.amount)} ₽</span>
+            <button class="del" data-del-inc="${e.id}" aria-label="Удалить">×</button>
+          </div>
+          <div class="row-meta">${e.person? `<span class="tag person">${e.person}</span>`:''}</div>
+        </div>`).join('');
+
+    body = `
+      <form class="add" id="incomeForm">
+        <div class="full"><label>Сумма, ₽</label><input type="number" id="iAmount" step="0.01" min="0" required></div>
+        <div><label>Категория</label><select id="iCategory">${INCOME_CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Дата</label><input type="date" id="iDate" value="${todayStr()}"></div>
+        <div class="full"><label>Кто получил</label><select id="iPerson">${PEOPLE.map(p=>`<option>${p}</option>`).join('')}</select></div>
+        <div class="full"><label>Заметка</label><input type="text" id="iNote" placeholder="напр., аванс"></div>
+        <button type="submit" class="submit">Добавить доход</button>
+      </form>
+      <div class="list">${rowsHtml}</div>
     `;
   }
 
-  return `
-    <div class="budget-row">
-      <span>Месячный лимит</span>
-      <input id="budgetInput" type="number" inputmode="decimal" placeholder="не задан" value="${budgetLimit!=null?budgetLimit:''}">
-    </div>
-
-    <form class="add" id="addForm">
-      <div class="full">
-        <label>Сумма, ₽</label>
-        <input type="number" id="amount" step="0.01" min="0" required>
-      </div>
-      <div>
-        <label>Категория</label>
-        <select id="category">
-          ${CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
-        </select>
-      </div>
-      <div>
-        <label>Дата</label>
-        <input type="date" id="date" value="${todayStr()}">
-      </div>
-      <div>
-        <label>Кто платил</label>
-        <select id="person">
-          ${PEOPLE.map(p=>`<option value="${p}">${p}</option>`).join('')}
-        </select>
-      </div>
-      <div>
-        <label>Место/магазин</label>
-        <input type="text" id="place" placeholder="например, Selver">
-      </div>
-      <div>
-        <label>Способ оплаты</label>
-        <select id="paymentMethod">
-          <option value="Карта">Карта</option>
-          <option value="Наличные">Наличные</option>
-        </select>
-      </div>
-      <div class="full">
-        <label>Периодичность</label>
-        <select id="recurring">
-          <option value="Разовый">Разовый</option>
-          <option value="Регулярный">Регулярный</option>
-        </select>
-      </div>
-      <div class="full">
-        <label>Заметка (необязательно)</label>
-        <input type="text" id="note" placeholder="например, кофе с коллегой">
-      </div>
-      <button type="submit" class="submit">Добавить запись</button>
-    </form>
-
-    <div class="list">${rowsHtml}</div>
-    ${breakdownHtml}
-
-    <div class="totals">
-      <div class="row2 total"><span>Итого потрачено</span><span>${fmt(total)} ₽</span></div>
-      ${budgetLimit!=null ? `<div class="row2"><span>Остаток бюджета</span><span class="${remaining<0?'neg':'pos'}">${fmt(remaining)} ₽</span></div>` : ''}
-    </div>
-    ${stampHtml}
-
-    ${expenses.length>0 ? '<button class="reset" id="clearBtn">Очистить всё</button>' : ''}
-  `;
+  return monthNav + subtabs + body + totalsBox;
 }
 
-function renderIncomeTab(){
-  const total = incomes.reduce((s,e)=>s+e.amount,0);
+/* ============ РЕНДЕР: СПИСОК ПОКУПОК ============ */
+function renderShoppingTab(){
+  const boughtSum = shopping.filter(s=>s.bought && s.price).reduce((sum,s)=>sum+s.price,0);
+  const boughtCount = shopping.filter(s=>s.bought).length;
 
-  let rowsHtml = '';
-  if(incomes.length===0){
-    rowsHtml = '<div class="empty">Пока пусто. Добавьте первый доход ниже.</div>';
+  const grouped = {};
+  shopping.forEach(s=>{ (grouped[s.category] = grouped[s.category]||[]).push(s); });
+
+  let listHtml='';
+  if(shopping.length===0){
+    listHtml = '<div class="empty">Список пуст. Добавьте товары ниже.</div>';
   } else {
-    rowsHtml = incomes.map(e=>`
-      <div class="row-entry">
-        <div class="row">
-          <span class="date">${shortDate(e.date)}</span>
-          <span class="desc">
-            <span class="cat">${e.category}</span>
-            ${e.note? `<span class="note">${e.note}</span>` : ''}
-          </span>
-          <span class="leader"></span>
-          <span class="amount" style="color:var(--forest)">+${fmt(e.amount)} ₽</span>
-          <button class="del" data-id="${e.id}" title="Удалить" aria-label="Удалить запись">×</button>
+    listHtml = Object.entries(grouped).map(([cat,items])=>`
+      <div class="date-header">${cat}</div>
+      ${items.map(s=>`
+        <div class="shop-item ${s.bought?'bought':'notbought'}">
+          <div class="shop-check" data-toggle="${s.id}">${s.bought?'✓':''}</div>
+          <div class="shop-name">
+            ${s.name}
+            <span class="shop-cat">${s.person||''}</span>
+          </div>
+          ${s.bought
+            ? `<input class="shop-price-input" type="number" inputmode="decimal" placeholder="цена" value="${s.price!=null?s.price:''}" data-price="${s.id}">`
+            : (s.price!=null? `<span class="shop-price">${fmt(s.price)} ₽</span>`:'')}
+          <button class="del" data-del-shop="${s.id}" aria-label="Удалить">×</button>
         </div>
-        <div class="row-meta">
-          ${e.person? `<span class="tag person">${e.person}</span>` : ''}
-        </div>
-      </div>
+      `).join('')}
     `).join('');
   }
 
   return `
-    <form class="add" id="incomeForm">
-      <div class="full">
-        <label>Сумма, ₽</label>
-        <input type="number" id="iAmount" step="0.01" min="0" required>
-      </div>
-      <div>
-        <label>Категория</label>
-        <select id="iCategory">
-          ${INCOME_CATEGORIES.map(c=>`<option value="${c}">${c}</option>`).join('')}
-        </select>
-      </div>
-      <div>
-        <label>Дата</label>
-        <input type="date" id="iDate" value="${todayStr()}">
-      </div>
-      <div class="full">
-        <label>Кто получил</label>
-        <select id="iPerson">
-          ${PEOPLE.map(p=>`<option value="${p}">${p}</option>`).join('')}
-        </select>
-      </div>
-      <div class="full">
-        <label>Заметка (необязательно)</label>
-        <input type="text" id="iNote" placeholder="например, аванс за март">
-      </div>
-      <button type="submit" class="submit">Добавить доход</button>
+    <form class="add" id="shopForm">
+      <div class="full"><label>Что купить</label><input type="text" id="sName" placeholder="напр., молоко" required></div>
+      <div><label>Категория</label><select id="sCategory">${SHOP_CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div><label>Кто</label><select id="sPerson">${PEOPLE.map(p=>`<option>${p}</option>`).join('')}</select></div>
+      <button type="submit" class="submit">Добавить в список</button>
     </form>
-
-    <div class="list">${rowsHtml}</div>
-
+    <div class="list">${listHtml}</div>
     <div class="totals">
-      <div class="row2 total"><span>Итого доходов</span><span style="color:var(--forest)">+${fmt(total)} ₽</span></div>
+      <div class="row2"><span>Куплено позиций</span><span>${boughtCount} из ${shopping.length}</span></div>
+      <div class="row2 total"><span>Потрачено (куплено)</span><span>${fmt(boughtSum)} ₽</span></div>
     </div>
+    ${boughtCount>0? '<button class="reset" id="clearBought">Убрать купленные из списка</button>':''}
   `;
 }
 
-function renderPlannedTab(){
-  const totalPlanned = planned.reduce((s,p)=>s+p.price,0);
-
-  let rowsHtml = '';
-  if(planned.length===0){
-    rowsHtml = '<div class="empty">Список пуст. Добавьте то, что планируете купить.</div>';
+/* ============ РЕНДЕР: ЖЕЛАНИЯ / КОПИЛКА ============ */
+function renderWishesTab(){
+  let listHtml='';
+  if(wishes.length===0){
+    listHtml = '<div class="empty">Пока нет желаний. Добавьте мечту ниже 🙂</div>';
   } else {
-    let lastLabel = null;
-    rowsHtml = planned.map(p=>{
-      const label = dateLabel(p.date);
-      const headerHtml = label!==lastLabel ? `<div class="date-header">${label}</div>` : '';
-      lastLabel = label;
+    listHtml = wishes.map(w=>{
+      const pct = w.target>0 ? Math.min(100, (w.saved/w.target*100)) : 0;
+      const done = w.saved>=w.target && w.target>0;
+      const left = Math.max(0, w.target - w.saved);
       return `
-        ${headerHtml}
-        <div class="row-entry">
-          <div class="row">
-            <span class="desc" style="max-width:48%">
-              <span class="cat">${p.name}</span>
-            </span>
-            <span class="leader"></span>
-            <span class="amount">${fmt(p.price)} ₽</span>
-            <button class="del" data-id="${p.id}" title="Удалить" aria-label="Удалить из списка">×</button>
+        <div class="wish">
+          <div class="wish-head">
+            <span class="wish-name">${w.name}</span>
+            <span class="wish-price">${fmt(w.target)} ₽</span>
+            <button class="wish-del" data-del-wish="${w.id}" aria-label="Удалить">×</button>
           </div>
-          <div class="row-meta">
-            ${p.person? `<span class="tag person">${p.person}</span>` : ''}
-            <span class="tag ${priorityClass(p.priority)}">${p.priority}</span>
-            <button class="buy-btn" data-id="${p.id}">Куплено → в расходы</button>
+          <div class="wish-progress-track"><span class="wish-progress-fill ${done?'done':''}" style="width:${pct}%"></span></div>
+          <div class="wish-info">
+            <span class="wish-saved">Накоплено: ${fmt(w.saved||0)} ₽ (${pct.toFixed(0)}%)</span>
+            <span>${done? '' : 'осталось '+fmt(left)+' ₽'}</span>
           </div>
-        </div>
-      `;
+          ${done? '<div class="wish-done-badge">✓ Цель достигнута!</div>' : `
+            <div class="wish-add-row">
+              <input type="number" inputmode="decimal" placeholder="отложить сумму" data-wish-input="${w.id}">
+              <button data-wish-add="${w.id}">Отложить</button>
+            </div>`}
+          ${w.person? `<div style="margin-top:6px"><span class="tag person">${w.person}</span></div>`:''}
+        </div>`;
     }).join('');
   }
 
+  const totalTarget = wishes.reduce((s,w)=>s+(w.target||0),0);
+  const totalSaved = wishes.reduce((s,w)=>s+(w.saved||0),0);
+
   return `
-    <form class="add" id="plannedForm">
-      <div class="full">
-        <label>Что купить</label>
-        <input type="text" id="pName" placeholder="например, новый пылесос" required>
-      </div>
-      <div>
-        <label>Примерная цена, ₽</label>
-        <input type="number" id="pPrice" step="0.01" min="0" required>
-      </div>
-      <div>
-        <label>Когда купить</label>
-        <input type="date" id="pDate" value="${todayStr()}">
-      </div>
-      <div>
-        <label>Приоритет</label>
-        <select id="pPriority">
-          <option value="Средний">Средний</option>
-          <option value="Высокий">Высокий</option>
-          <option value="Низкий">Низкий</option>
-        </select>
-      </div>
-      <div class="full">
-        <label>Кто хочет купить</label>
-        <select id="pPerson">
-          ${PEOPLE.map(p=>`<option value="${p}">${p}</option>`).join('')}
-        </select>
-      </div>
-      <button type="submit" class="submit">Добавить в список</button>
+    <form class="add" id="wishForm">
+      <div class="full"><label>Желание / крупная покупка</label><input type="text" id="wName" placeholder="напр., отпуск в горах" required></div>
+      <div><label>Цель, ₽</label><input type="number" id="wTarget" step="0.01" min="0" required></div>
+      <div><label>Кто хочет</label><select id="wPerson">${PEOPLE.map(p=>`<option>${p}</option>`).join('')}</select></div>
+      <button type="submit" class="submit">Добавить желание</button>
     </form>
-
-    <div class="list">${rowsHtml}</div>
-
-    <div class="totals">
-      <div class="row2 total"><span>Итого запланировано</span><span>${fmt(totalPlanned)} ₽</span></div>
-    </div>
+    <div class="list">${listHtml}</div>
+    ${wishes.length? `<div class="totals">
+      <div class="row2"><span>Всего накоплено</span><span class="pos">${fmt(totalSaved)} ₽</span></div>
+      <div class="row2 total"><span>Общая цель</span><span>${fmt(totalTarget)} ₽</span></div>
+    </div>`:''}
   `;
 }
 
+/* ============ ГЛАВНЫЙ РЕНДЕР ============ */
 function render(){
   const card = document.getElementById('card');
+  if(firstLoad){ card.innerHTML = '<div class="loading">Подключение к базе данных…</div>'; return; }
 
-  if(firstLoad){
-    card.innerHTML = '<div class="loading">Подключение к базе данных…</div>';
-    return;
-  }
+  const totalExpAll = expenses.reduce((s,e)=>s+e.amount,0);
+  const totalIncAll = incomes.reduce((s,e)=>s+e.amount,0);
+  const balance = totalIncAll - totalExpAll;
 
-  const totalExp = expenses.reduce((s,e)=>s+e.amount,0);
-  const totalInc = incomes.reduce((s,e)=>s+e.amount,0);
-  const balance = totalInc - totalExp;
+  let content = '';
+  if(activeTab==='finance') content = renderFinanceTab();
+  else if(activeTab==='shopping') content = renderShoppingTab();
+  else content = renderWishesTab();
 
   card.innerHTML = `
     <h1>Гроссбух</h1>
     <div class="sub">семейный бюджет</div>
-    <div class="sync-status ${connected? '' : 'offline'}">${connected? '● синхронизировано' : '○ нет связи с базой'}</div>
+    <div class="sync-status ${connected?'':'offline'}">${connected?'● синхронизировано':'○ нет связи с базой'}</div>
     <div class="balance-bar">
-      <span>Баланс</span>
+      <span>Общий баланс</span>
       <span class="balance-val ${balance<0?'neg':'pos'}">${balance>=0?'+':''}${fmt(balance)} ₽</span>
     </div>
     <div class="tabs">
-      <button class="tab ${activeTab==='expenses'?'active':''}" id="tabExpenses">Расходы</button>
-      <button class="tab ${activeTab==='income'?'active':''}" id="tabIncome">Доходы</button>
-      <button class="tab ${activeTab==='planned'?'active':''}" id="tabPlanned">Покупки</button>
+      <button class="tab ${activeTab==='finance'?'active':''}" id="tabFinance">Финансы</button>
+      <button class="tab ${activeTab==='shopping'?'active':''}" id="tabShopping">Покупки</button>
+      <button class="tab ${activeTab==='wishes'?'active':''}" id="tabWishes">Желания</button>
     </div>
-    ${activeTab==='expenses' ? renderExpensesTab() : activeTab==='income' ? renderIncomeTab() : renderPlannedTab()}
+    ${content}
   `;
 
-  document.getElementById('tabExpenses').addEventListener('click', ()=>switchTab('expenses'));
-  document.getElementById('tabIncome').addEventListener('click', ()=>switchTab('income'));
-  document.getElementById('tabPlanned').addEventListener('click', ()=>switchTab('planned'));
+  document.getElementById('tabFinance').onclick = ()=>switchTab('finance');
+  document.getElementById('tabShopping').onclick = ()=>switchTab('shopping');
+  document.getElementById('tabWishes').onclick = ()=>switchTab('wishes');
 
-  if(activeTab==='expenses'){
-    document.getElementById('addForm').addEventListener('submit', (ev)=>{
+  if(activeTab==='finance'){
+    document.getElementById('prevMonth').onclick = ()=>{ viewMonth = shiftMonth(viewMonth,-1); render(); };
+    document.getElementById('nextMonth').onclick = ()=>{ viewMonth = shiftMonth(viewMonth,1); render(); };
+    document.getElementById('subExp').onclick = ()=>switchSub('expenses');
+    document.getElementById('subInc').onclick = ()=>switchSub('income');
+
+    if(financeSub==='expenses'){
+      const f = document.getElementById('addForm');
+      f.onsubmit = (ev)=>{
+        ev.preventDefault();
+        const amount = parseFloat(document.getElementById('amount').value);
+        if(!amount || amount<=0) return;
+        addExpense(amount,
+          document.getElementById('category').value,
+          document.getElementById('note').value.trim(),
+          document.getElementById('date').value || todayStr(),
+          document.getElementById('place').value.trim(),
+          document.getElementById('paymentMethod').value,
+          document.getElementById('recurring').value,
+          document.getElementById('person').value);
+      };
+      card.querySelectorAll('[data-del-exp]').forEach(b=> b.onclick=()=>deleteExpense(b.getAttribute('data-del-exp')));
+    } else {
+      const f = document.getElementById('incomeForm');
+      f.onsubmit = (ev)=>{
+        ev.preventDefault();
+        const amount = parseFloat(document.getElementById('iAmount').value);
+        if(!amount || amount<=0) return;
+        addIncome(amount,
+          document.getElementById('iCategory').value,
+          document.getElementById('iNote').value.trim(),
+          document.getElementById('iDate').value || todayStr(),
+          document.getElementById('iPerson').value);
+      };
+      card.querySelectorAll('[data-del-inc]').forEach(b=> b.onclick=()=>deleteIncome(b.getAttribute('data-del-inc')));
+    }
+  } else if(activeTab==='shopping'){
+    document.getElementById('shopForm').onsubmit = (ev)=>{
       ev.preventDefault();
-      const amount = parseFloat(document.getElementById('amount').value);
-      const category = document.getElementById('category').value;
-      const note = document.getElementById('note').value.trim();
-      const date = document.getElementById('date').value || todayStr();
-      const place = document.getElementById('place').value.trim();
-      const paymentMethod = document.getElementById('paymentMethod').value;
-      const recurring = document.getElementById('recurring').value;
-      const person = document.getElementById('person').value;
-      if(!amount || amount<=0) return;
-      addExpense(amount, category, note, date, place, paymentMethod, recurring, person);
+      const name = document.getElementById('sName').value.trim();
+      if(!name) return;
+      addShopItem(name, document.getElementById('sCategory').value, document.getElementById('sPerson').value);
+    };
+    card.querySelectorAll('[data-toggle]').forEach(b=> b.onclick=()=>toggleBought(b.getAttribute('data-toggle')));
+    card.querySelectorAll('[data-del-shop]').forEach(b=> b.onclick=()=>deleteShopItem(b.getAttribute('data-del-shop')));
+    card.querySelectorAll('[data-price]').forEach(inp=>{
+      inp.onchange = ()=>{
+        const v = parseFloat(inp.value);
+        setShopPrice(inp.getAttribute('data-price'), isNaN(v)? null : v);
+      };
     });
-
-    document.getElementById('budgetInput').addEventListener('change', (ev)=>{
-      const v = parseFloat(ev.target.value);
-      budgetLimit = (ev.target.value==='' || isNaN(v)) ? null : v;
-      saveAll();
-      render();
-    });
-
-    card.querySelectorAll('.del').forEach(btn=>{
-      btn.addEventListener('click', ()=> deleteExpense(btn.dataset.id));
-    });
-
-    const clearBtn = document.getElementById('clearBtn');
-    if(clearBtn) clearBtn.addEventListener('click', clearAll);
-  } else if(activeTab==='income'){
-    document.getElementById('incomeForm').addEventListener('submit', (ev)=>{
-      ev.preventDefault();
-      const amount = parseFloat(document.getElementById('iAmount').value);
-      const category = document.getElementById('iCategory').value;
-      const note = document.getElementById('iNote').value.trim();
-      const date = document.getElementById('iDate').value || todayStr();
-      const person = document.getElementById('iPerson').value;
-      if(!amount || amount<=0) return;
-      addIncome(amount, category, note, date, person);
-    });
-
-    card.querySelectorAll('.del').forEach(btn=>{
-      btn.addEventListener('click', ()=> deleteIncome(btn.dataset.id));
-    });
+    const cb = document.getElementById('clearBought');
+    if(cb) cb.onclick = clearBoughtShop;
   } else {
-    document.getElementById('plannedForm').addEventListener('submit', (ev)=>{
+    document.getElementById('wishForm').onsubmit = (ev)=>{
       ev.preventDefault();
-      const name = document.getElementById('pName').value.trim();
-      const price = parseFloat(document.getElementById('pPrice').value);
-      const priority = document.getElementById('pPriority').value;
-      const person = document.getElementById('pPerson').value;
-      const date = document.getElementById('pDate').value || todayStr();
-      if(!name || !price || price<=0) return;
-      addPlanned(name, price, priority, person, date);
-    });
-
-    card.querySelectorAll('.del').forEach(btn=>{
-      btn.addEventListener('click', ()=> deletePlanned(btn.dataset.id));
-    });
-    card.querySelectorAll('.buy-btn').forEach(btn=>{
-      btn.addEventListener('click', ()=> markPurchased(btn.dataset.id));
+      const name = document.getElementById('wName').value.trim();
+      const target = parseFloat(document.getElementById('wTarget').value);
+      if(!name || !target || target<=0) return;
+      addWish(name, target, document.getElementById('wPerson').value);
+    };
+    card.querySelectorAll('[data-del-wish]').forEach(b=> b.onclick=()=>deleteWish(b.getAttribute('data-del-wish')));
+    card.querySelectorAll('[data-wish-add]').forEach(b=>{
+      b.onclick = ()=>{
+        const id = b.getAttribute('data-wish-add');
+        const inp = card.querySelector(`[data-wish-input="${id}"]`);
+        const v = parseFloat(inp.value);
+        if(!v || v<=0) return;
+        addToWish(id, v);
+      };
     });
   }
 }
