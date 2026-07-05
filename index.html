@@ -637,6 +637,28 @@ const CATEGORIES = ["Продукты","Кафе/Рестораны","Транс
 const INCOME_CATEGORIES = ["Зарплата","Подработка","Подарок","Возврат","Другое"];
 const SHOP_CATEGORIES = CATEGORIES;
 const PEOPLE = ["Артемий","Дарья"];
+const ONESIGNAL_APP_ID = "88ee6a98-6240-4163-affd-f898481352d6";
+const ONESIGNAL_REST_API_KEY = "os_v2_app_rdxgvgdcibawhl757cmeqe2s22it5vtrlxveznmbozaidhltz6a4agsc37aslibapqenvzg5qhzjp4gm5l6ujyrkzkmsjavebfh7jdy";
+
+async function sendPushToOther(entryPerson, title, message){
+  const other = PEOPLE.find(p=>p!==entryPerson);
+  if(!other) return;
+  try{
+    await fetch('https://api.onesignal.com/notifications', {
+      method:'POST',
+      headers:{
+        'Content-Type':'application/json',
+        'Authorization':'Key '+ONESIGNAL_REST_API_KEY
+      },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        filters: [{field:'tag', key:'person', relation:'=', value:other}],
+        headings: {en: title},
+        contents: {en: message}
+      })
+    });
+  }catch(e){ console.error('Не удалось отправить уведомление', e); }
+}
 
 let expenses = [];
 let incomes = [];
@@ -706,6 +728,7 @@ function addExpense(amount, category, note, date, place, paymentMethod, recurrin
   expenses.push({ id:newId(), amount, category, note, date, place, paymentMethod, recurring, person });
   expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
   saveAll(); render();
+  sendPushToOther(person, 'Новый расход', `${person} добавил(а) расход: ${fmt(amount)} ₽ (${category})`);
 }
 function deleteExpense(id){ expenses = expenses.filter(e=>e.id!==id); saveAll(); render(); }
 
@@ -714,6 +737,7 @@ function addIncome(amount, category, note, date, person){
   incomes.push({ id:newId(), amount, category, note, date, person });
   incomes.sort((a,b)=> a.date < b.date ? 1 : -1);
   saveAll(); render();
+  sendPushToOther(person, 'Новый доход', `${person} добавил(а) доход: ${fmt(amount)} ₽ (${category})`);
 }
 function deleteIncome(id){ incomes = incomes.filter(e=>e.id!==id); saveAll(); render(); }
 
@@ -721,6 +745,7 @@ function deleteIncome(id){ incomes = incomes.filter(e=>e.id!==id); saveAll(); re
 function addShopItem(name, category, person){
   shopping.push({ id:newId(), name, category, person, bought:false, price:null, qty:1 });
   saveAll(); render();
+  sendPushToOther(person, 'Новая покупка в списке', `${person} добавил(а) в список: ${name}`);
 }
 function deleteShopItem(id){
   const item = shopping.find(s=>s.id===id);
@@ -791,6 +816,7 @@ function clearBoughtShop(){
 function addWish(name, target, person){
   wishes.push({ id:newId(), name, target, saved:0, person });
   saveAll(); render();
+  sendPushToOther(person, 'Новое желание', `${person} добавил(а) желание: ${name} (${fmt(target)} ₽)`);
 }
 function deleteWish(id){ wishes = wishes.filter(w=>w.id!==id); saveAll(); render(); }
 function addToWish(id, amount){
@@ -1071,8 +1097,21 @@ function render(){
   `;
 
   document.getElementById('enablePush').onclick = ()=>{
+    let devicePerson = localStorage.getItem('devicePerson');
+    if(!devicePerson || !PEOPLE.includes(devicePerson)){
+      const answer = prompt('Чьё это устройство? Введите: '+PEOPLE.join(' или '));
+      if(answer && PEOPLE.includes(answer.trim())){
+        devicePerson = answer.trim();
+        localStorage.setItem('devicePerson', devicePerson);
+      }
+    }
     if(window.OneSignalDeferred){
-      window.OneSignalDeferred.push(function(OneSignal){ OneSignal.User.PushSubscription.optIn(); });
+      window.OneSignalDeferred.push(function(OneSignal){
+        OneSignal.User.PushSubscription.optIn();
+        if(devicePerson){
+          setTimeout(()=>{ OneSignal.User.addTag('person', devicePerson); }, 1500);
+        }
+      });
     }
   };
 
