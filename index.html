@@ -1070,7 +1070,7 @@ function render(){
 
   document.getElementById('enablePush').onclick = ()=>{
     if(window.OneSignalDeferred){
-      window.OneSignalDeferred.push(function(OneSignal){ OneSignal.Notifications.requestPermission(); });
+      window.OneSignalDeferred.push(function(OneSignal){ OneSignal.User.PushSubscription.optIn(); });
     }
   };
 
