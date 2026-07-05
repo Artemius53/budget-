@@ -638,18 +638,15 @@ const INCOME_CATEGORIES = ["Зарплата","Подработка","Подар
 const SHOP_CATEGORIES = CATEGORIES;
 const PEOPLE = ["Артемий","Дарья"];
 const ONESIGNAL_APP_ID = "88ee6a98-6240-4163-affd-f898481352d6";
-const ONESIGNAL_REST_API_KEY = "os_v2_app_rdxgvgdcibawhl757cmeqe2s22it5vtrlxveznmbozaidhltz6a4agsc37aslibapqenvzg5qhzjp4gm5l6ujyrkzkmsjavebfh7jdy";
+const PUSH_WORKER_URL = "https://frosty-frog-05f9.tyoma53st.workers.dev/";
 
 async function sendPushToOther(entryPerson, title, message){
   const other = PEOPLE.find(p=>p!==entryPerson);
   if(!other) return;
   try{
-    await fetch('https://api.onesignal.com/notifications', {
+    await fetch(PUSH_WORKER_URL, {
       method:'POST',
-      headers:{
-        'Content-Type':'application/json',
-        'Authorization':'Key '+ONESIGNAL_REST_API_KEY
-      },
+      headers:{ 'Content-Type':'application/json' },
       body: JSON.stringify({
         app_id: ONESIGNAL_APP_ID,
         filters: [{field:'tag', key:'person', relation:'=', value:other}],
