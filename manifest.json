@@ -1,0 +1,9 @@
+{
+  "name": "Гроссбух",
+  "short_name": "Гроссбух",
+  "start_url": "/budget-/",
+  "display": "standalone",
+  "background_color": "#DEE3D6",
+  "theme_color": "#DEE3D6",
+  "icons": []
+}
