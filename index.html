@@ -6,6 +6,7 @@
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <meta name="apple-mobile-web-app-title" content="Гроссбух">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
 <meta name="theme-color" content="#DEE3D6">
 <title>Гроссбух</title>
 <link rel="manifest" href="manifest.json">
@@ -57,6 +58,22 @@
     box-shadow: 0 24px 48px rgba(28,43,34,0.16);
     padding: 34px 26px 26px;
   }
+  .bell-btn{
+    position:absolute;
+    top:14px;
+    right:16px;
+    width:34px; height:34px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:#fff;
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+    z-index:5;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bell-btn:active{ background: rgba(28,43,34,0.06); }
+  .history-btn{ right:56px; }
   .card::before, .card::after{
     content:'';
     position:absolute;
@@ -143,6 +160,11 @@
     gap:0;
     border-bottom: 2px solid var(--ink);
     margin-bottom: 18px;
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    background: var(--paper);
+    z-index: 20;
+    box-shadow: 0 4px 8px -4px rgba(28,43,34,0.08);
   }
   .tab{
     flex:1;
@@ -514,7 +536,6 @@
   .trend-bar{ height:100%; border-radius:3px; }
   .trend-bar.income{ background: var(--forest); }
   .trend-bar.expense{ background: var(--rust); }
-
   .empty{
     text-align:center;
     color: var(--ink-soft);
@@ -595,16 +616,38 @@
     margin-bottom:14px;
   }
   .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
     font-size:11px;
-    padding:5px 10px;
+    padding:2px 2px 2px 10px;
     border-radius:14px;
     border:1px solid var(--line);
     background:#fff;
     color: var(--ink-soft);
+  }
+  .chip-add{
+    background:none;
+    border:none;
+    font-size:11px;
+    color: var(--ink-soft);
+    cursor:pointer;
+    padding:3px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .chip-add:active{ color: var(--ink); }
+  .chip-del{
+    background: rgba(28,43,34,0.06);
+    border:none;
+    border-radius:50%;
+    width:18px; height:18px;
+    font-size:12px;
+    line-height:1;
+    color: var(--ink-soft);
     cursor:pointer;
     -webkit-tap-highlight-color: transparent;
   }
-  .chip:active{ background: rgba(28,43,34,0.08); }
+  .chip-del:active{ color: var(--rust); background: rgba(166,58,46,0.12); }
   .shop-check{
     width:26px; height:26px;
     margin-top:1px;
@@ -765,9 +808,9 @@ const app = initializeApp(firebaseConfig);
 const db = getFirestore(app);
 const budgetDocRef = doc(db, "budget", "shared");
 
-const CATEGORIES = ["Продукты","Кафе/Рестораны","Транспорт","Жильё","Развлечения","Здоровье","Одежда","Электроника","Хозтовары","Для дома","Другое"];
+const CATEGORIES = ["Продукты","Кафе/Рестораны","Транспорт","Жильё","Развлечения","Здоровье","Одежда","Электроника","Хозтовары","Для дома","Кредиты","Накопления","Другое"];
 const INCOME_CATEGORIES = ["Зарплата","Подработка","Подарок","Возврат","Другое"];
-const SHOP_CATEGORIES = CATEGORIES;
+const SHOP_CATEGORIES = CATEGORIES.filter(c=>c!=='Кредиты' && c!=='Накопления');
 const EXPENSE_TYPES = ["Обязательные","Необходимые","Желаемые"];
 const PEOPLE = ["Артемий","Дарья"];
 const ONESIGNAL_APP_ID = "88ee6a98-6240-4163-affd-f898481352d6";
@@ -795,22 +838,24 @@ let expenses = [];
 let incomes = [];
 let budgetLimit = null;
 let shopping = [];
-let wishes = [];
 let planned = [];
 let accounts = [];
 let dailyLimit = null;
 let credits = [];
 let goals = [];
+let categoryLimits = {};
+let debtStrategy = 'avalanche'; // avalanche | snowball
+let histFilterText = '';
+let histFilterPerson = '';
+let histFilterCategory = '';
 let shopHistory = [];
 let lastShoppingList = [];
 
-let activeTab = 'home';     // home | finance | shopping | wishes | planned
+let activeTab = 'home';     // home | finance | shopping | goals
 let financeSub = 'expenses';   // expenses | income
 let viewMonth = new Date().toISOString().slice(0,7); // YYYY-MM
 let trendGranularity = 'month'; // day | month | year
 
-let homeViewDate = new Date().toISOString().slice(0,10);
-let homeCalMonth = new Date().toISOString().slice(0,7);
 let connected = false;
 let firstLoad = true;
 
@@ -876,14 +921,22 @@ onSnapshot(budgetDocRef, (snap)=>{
     incomes = data.incomes || [];
     budgetLimit = (data.budgetLimit === undefined) ? null : data.budgetLimit;
     shopping = data.shopping || [];
-    wishes = data.wishes || [];
     planned = data.planned || [];
     accounts = data.accounts || [];
     dailyLimit = (data.dailyLimit===undefined)? null : data.dailyLimit;
     credits = data.credits || [];
     goals = data.goals || [];
     shopHistory = data.shopHistory || [];
+    categoryLimits = data.categoryLimits || {};
     lastShoppingList = data.lastShoppingList || [];
+
+    const oldWishes = data.wishes || [];
+    if(oldWishes.length){
+      oldWishes.forEach(w=>{
+        goals.push({ id:newId(), name:w.name, target:w.target, saved:w.saved||0, person:w.person });
+      });
+      saveAll();
+    }
   }
   firstLoad = false;
   render();
@@ -896,15 +949,15 @@ onSnapshot(budgetDocRef, (snap)=>{
 
 async function saveAll(){
   try{
-    await setDoc(budgetDocRef, { expenses, incomes, budgetLimit, shopping, wishes, planned, accounts, dailyLimit, credits, goals, shopHistory, lastShoppingList });
+    await setDoc(budgetDocRef, { expenses, incomes, budgetLimit, shopping, planned, accounts, dailyLimit, credits, goals, shopHistory, lastShoppingList, categoryLimits });
   }catch(e){ console.error('Не удалось сохранить данные', e); }
 }
 
 function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
 
 /* ---- Расходы ---- */
-function addExpense(amount, category, note, date, place, paymentMethod, recurring, person, accountId, expType){
-  expenses.push({ id:newId(), amount, category, note, date, place, paymentMethod, recurring, person, accountId: accountId||null, expType: expType||'Необходимые' });
+function addExpense(amount, category, note, date, place, paymentMethod, recurring, person, accountId, expType, creditId, tags){
+  expenses.push({ id:newId(), amount, category, note, date, place, paymentMethod, recurring, person, accountId: accountId||null, expType: expType||'Необходимые', creditId: creditId||null, tags: tags||[] });
   expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
   saveAll(); render();
   sendPushToOther(person, 'Новый расход', `${person} добавил(а) расход: ${fmt(amount)} ₽ (${category})`);
@@ -928,6 +981,10 @@ function addShopItem(name, category, person, qty){
   }
   saveAll(); render();
   sendPushToOther(person, 'Новая покупка в списке', `${person} добавил(а) в список: ${name}`);
+}
+function deleteShopHistoryItem(name){
+  shopHistory = shopHistory.filter(h=>h.name!==name);
+  saveAll(); render();
 }
 function deleteShopItem(id){
   const item = shopping.find(s=>s.id===id);
@@ -1005,20 +1062,6 @@ function restoreLastShoppingList(){
   saveAll(); render();
 }
 
-/* ---- Желания / копилка ---- */
-function addWish(name, target, person){
-  wishes.push({ id:newId(), name, target, saved:0, person });
-  saveAll(); render();
-  sendPushToOther(person, 'Новое желание', `${person} добавил(а) желание: ${name} (${fmt(target)} ₽)`);
-}
-function deleteWish(id){ wishes = wishes.filter(w=>w.id!==id); saveAll(); render(); }
-function addToWish(id, amount){
-  const w = wishes.find(x=>x.id===id);
-  if(!w) return;
-  w.saved = Math.max(0, (w.saved||0) + amount);
-  saveAll(); render();
-}
-
 /* ---- Цели (финансовые, без желаний) ---- */
 function addGoal(name, target, person){
   goals.push({ id:newId(), name, target, saved:0, person });
@@ -1030,7 +1073,7 @@ function addToGoal(id, amount){
   const g = goals.find(x=>x.id===id);
   if(!g) return;
   g.saved = Math.max(0, (g.saved||0) + amount);
-  saveAll(); render();
+  addExpense(amount, 'Накопления', `Отложено на цель: ${g.name}`, todayStr(), '', 'Карта', 'Разовый', getDevicePerson(), null, 'Необходимые', null);
 }
 
 /* ---- Календарь планов ---- */
@@ -1068,24 +1111,30 @@ function totalBalanceAsOf(asOfDate){
   return accounts.reduce((s,a)=>{ const v = accountBalanceAsOf(a, asOfDate); return s + (v==null?0:v); }, 0);
 }
 function setDailyLimit(value){ dailyLimit = value; saveAll(); render(); }
+function setCategoryLimit(category, value){
+  if(value==null){ delete categoryLimits[category]; }
+  else { categoryLimits[category] = value; }
+  saveAll(); render();
+}
 
 /* ---- Кредитные обязательства ---- */
-function addCredit(person, name, totalDebt, monthlyPayment, paymentDay){
-  credits.push({ id:newId(), person, name, totalDebt, monthlyPayment, paymentDay, paidMonths: [] });
+function addCredit(person, name, creditType, totalDebt, rate, monthlyPayment, paymentDay){
+  credits.push({ id:newId(), person, name, creditType, totalDebt, rate, monthlyPayment, paymentDay });
   saveAll(); render();
 }
 function deleteCredit(id){ credits = credits.filter(c=>c.id!==id); saveAll(); render(); }
 function creditRemaining(c){
-  const paid = (c.paidMonths||[]).length * c.monthlyPayment;
+  const paid = expenses.filter(e=>e.creditId===c.id).reduce((s,e)=>s+e.amount,0);
   return Math.max(0, c.totalDebt - paid);
 }
-function payCreditThisMonth(id){
+function creditPaidThisMonth(c){
+  const ym = monthOf(todayStr());
+  return expenses.some(e=>e.creditId===c.id && monthOf(e.date)===ym);
+}
+function payCreditNow(id){
   const c = credits.find(x=>x.id===id);
   if(!c) return;
-  const ym = monthOf(todayStr());
-  if((c.paidMonths||[]).includes(ym)) return;
-  c.paidMonths = [...(c.paidMonths||[]), ym];
-  saveAll(); render();
+  addExpense(c.monthlyPayment, 'Кредиты', c.name, todayStr(), '', 'Карта', 'Разовый', getDevicePerson(), null, 'Обязательные', c.id);
 }
 
 function getDevicePerson(){
@@ -1110,26 +1159,9 @@ function changeDevicePerson(){
 function switchSub(sub){ financeSub = sub; render(); }
 
 /* ============ РЕНДЕР: ФИНАНСЫ ============ */
-/* ============ РЕНДЕР: ГЛАВНАЯ ============ */
-function daysInMonth(ym){ const [y,m]=ym.split('-').map(Number); return new Date(y,m,0).getDate(); }
-function firstWeekdayMon(ym){ const [y,m]=ym.split('-').map(Number); let wd=new Date(y,m-1,1).getDay(); return wd===0?6:wd-1; }
-
-function renderHomeTab(){
-  const total = totalBalanceAsOf(homeViewDate);
-  const isToday = homeViewDate===todayStr();
-
-  const nDays = daysInMonth(homeCalMonth);
-  const offset = firstWeekdayMon(homeCalMonth);
-  let calCells = '';
-  for(let i=0;i<offset;i++) calCells += `<div></div>`;
-  for(let d=1; d<=nDays; d++){
-    const dateStr = homeCalMonth+'-'+String(d).padStart(2,'0');
-    const cls = ['cal-day'];
-    if(dateStr===todayStr()) cls.push('today');
-    if(dateStr===homeViewDate) cls.push('selected');
-    calCells += `<button class="${cls.join(' ')}" data-cal-day="${dateStr}">${d}</button>`;
-  }
-
+/* ============ РЕНДЕР: СЧЕТА ============ */
+function renderAccountsTab(){
+  const today = todayStr();
   const byOwner = {};
   accounts.forEach(a=>{ (byOwner[a.owner]=byOwner[a.owner]||[]).push(a); });
 
@@ -1138,7 +1170,7 @@ function renderHomeTab(){
     : Object.entries(byOwner).map(([owner,accs])=>`
         <div class="tb-section-title">${owner}</div>
         ${accs.map(a=>{
-          const bal = accountBalanceAsOf(a, homeViewDate);
+          const bal = accountBalanceAsOf(a, today);
           return `
           <div class="row-entry">
             <div class="row">
@@ -1152,33 +1184,99 @@ function renderHomeTab(){
       `).join('');
 
   return `
-    <div class="home-greeting">Привет, ${getDevicePerson()}! 👋</div>
-
-    <div class="cal-nav">
-      <button id="calPrev" aria-label="Предыдущий месяц">‹</button>
-      <span class="month-label">${monthLabel(homeCalMonth)}</span>
-      <button id="calNext" aria-label="Следующий месяц">›</button>
-    </div>
-    <div class="cal-grid cal-weekdays">
-      <div>Пн</div><div>Вт</div><div>Ср</div><div>Чт</div><div>Пт</div><div>Сб</div><div>Вс</div>
-    </div>
-    <div class="cal-grid">${calCells}</div>
-
-    <div class="totals-box" style="margin-top:16px">
-      <div class="tb-title">Баланс на ${isToday? 'сегодня' : shortDate(homeViewDate)}</div>
-      <div class="totals">
-        <div class="row2 total"><span>Всего</span><span class="${total<0?'neg':'pos'}">${fmt(total)} ₽</span></div>
-      </div>
-      ${accountsHtml}
-    </div>
-
-    <form class="add" id="accountForm" style="margin-top:16px">
+    <form class="add" id="accountForm">
       <div class="full"><label>Новый счёт</label></div>
       <div><label>Владелец</label><select id="accOwner">${PEOPLE.map(p=>`<option>${p}</option>`).join('')}</select></div>
       <div><label>Банк</label><input type="text" id="accBank" placeholder="напр., Тбанк"></div>
       <div class="full"><label>Текущий остаток, ₽</label><input type="number" id="accBalance" step="0.01"></div>
       <button type="submit" class="submit">Добавить счёт</button>
     </form>
+    <div class="list">${accountsHtml}</div>
+  `;
+}
+
+/* ============ РЕНДЕР: ГЛАВНАЯ (ДАШБОРД) ============ */
+function renderHomeTab(){
+  const today = todayStr();
+  const ym = today.slice(0,7);
+  const totalBalance = totalBalanceAsOf(today);
+  const netWorth = totalBalance - credits.reduce((s,c)=>s+creditRemaining(c),0);
+
+  const monthExp = expenses.filter(e=>monthOf(e.date)===ym);
+  const monthInc = incomes.filter(e=>monthOf(e.date)===ym);
+  const totalExp = monthExp.reduce((s,e)=>s+e.amount,0);
+  const totalInc = monthInc.reduce((s,e)=>s+e.amount,0);
+
+  const expectedThisMonth = planned.filter(p=>monthOf(p.date)===ym).reduce((s,p)=>s+p.amount,0);
+  const forecastBalance = totalBalance + expectedThisMonth;
+
+  const creditsRemaining = credits.reduce((s,c)=>s+creditRemaining(c),0);
+  const upcomingCredits = credits.filter(c=>{
+    const day = parseInt(todayStr().slice(8,10),10);
+    const daysLeft = c.paymentDay - day;
+    return !creditPaidThisMonth(c) && daysLeft>=0 && daysLeft<=3;
+  });
+
+  const goalsSaved = goals.reduce((s,g)=>s+(g.saved||0),0);
+  const goalsTarget = goals.reduce((s,g)=>s+(g.target||0),0);
+
+  const subs = {};
+  monthExp.filter(e=>e.recurring==='Регулярный').forEach(e=>{
+    const key = e.note || e.category;
+    subs[key] = (subs[key]||0) + e.amount;
+  });
+  const subsTotal = Object.values(subs).reduce((s,v)=>s+v,0);
+  const subsList = Object.entries(subs).sort((a,b)=>b[1]-a[1]);
+
+  return `
+    <div class="home-greeting">Привет, ${getDevicePerson()}! 👋</div>
+
+    <div class="totals-box">
+      <div class="tb-title">Общий баланс</div>
+      <div class="totals">
+        <div class="row2 total"><span>Сейчас</span><span class="${totalBalance<0?'neg':'pos'}">${fmt(totalBalance)} ₽</span></div>
+        <div class="row2"><span>Чистый капитал (за вычетом кредитов)</span><span class="${netWorth<0?'neg':'pos'}">${fmt(netWorth)} ₽</span></div>
+        <div class="row2"><span>Прогноз с учётом ожидаемых доходов</span><span>${fmt(forecastBalance)} ₽</span></div>
+      </div>
+    </div>
+
+    <div class="totals-box" style="margin-top:16px">
+      <div class="tb-title">Итого за ${monthLabel(ym)}</div>
+      <div class="totals">
+        <div class="row2"><span>Доходы</span><span class="pos">+${fmt(totalInc)} ₽</span></div>
+        <div class="row2"><span>Расходы</span><span class="neg">−${fmt(totalExp)} ₽</span></div>
+        <div class="row2 total"><span>Разница</span><span class="${(totalInc-totalExp)<0?'neg':'pos'}">${(totalInc-totalExp)>=0?'+':''}${fmt(totalInc-totalExp)} ₽</span></div>
+      </div>
+    </div>
+
+    <div class="totals-box" style="margin-top:16px">
+      <div class="tb-title">Кредиты</div>
+      <div class="totals">
+        <div class="row2 total"><span>Остаток долга</span><span class="neg">${fmt(creditsRemaining)} ₽</span></div>
+      </div>
+      ${upcomingCredits.length? upcomingCredits.map(c=>`
+        <div class="row2" style="color:var(--rust)"><span>⚠ ${c.name}</span><span>платёж ${c.paymentDay} числа</span></div>
+      `).join('') : '<div class="empty" style="padding:6px 0">Ближайших платежей нет</div>'}
+    </div>
+
+    <div class="totals-box" style="margin-top:16px">
+      <div class="tb-title">Накопления</div>
+      <div class="totals">
+        <div class="row2"><span>Накоплено</span><span class="pos">${fmt(goalsSaved)} ₽</span></div>
+        <div class="row2 total"><span>Общая цель</span><span>${fmt(goalsTarget)} ₽</span></div>
+      </div>
+    </div>
+
+    ${subsList.length? `
+    <div class="totals-box" style="margin-top:16px">
+      <div class="tb-title">Подписки и регулярные платежи</div>
+      ${subsList.map(([name,val])=>`
+        <div class="row2"><span>${name}</span><span>${fmt(val)} ₽/мес</span></div>
+      `).join('')}
+      <div class="totals" style="margin-top:8px">
+        <div class="row2 total"><span>Итого в месяц</span><span>${fmt(subsTotal)} ₽</span></div>
+      </div>
+    </div>` : ''}
   `;
 }
 
@@ -1265,20 +1363,6 @@ function renderFinanceTab(){
     `).join('')}
   `;
 
-  // Прогресс по копилкам-желаниям
-  const wishesBox = wishes.length? `
-    <div class="tb-section-title" style="margin-top:16px">Прогресс по желаниям</div>
-    ${wishes.map(w=>{
-      const pct = w.target>0 ? Math.min(100,(w.saved/w.target*100)) : 0;
-      return `
-        <div class="bd-row">
-          <span class="bd-label">${w.name}</span>
-          <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${pct.toFixed(0)}%;background:var(--copper)"></span></span>
-          <span class="bd-amount">${pct.toFixed(0)}%</span>
-        </div>`;
-    }).join('')}
-  ` : '';
-
   const recurringSum = monthExp.filter(e=>e.recurring==='Регулярный').reduce((s,e)=>s+e.amount,0);
   const forecastBox = recurringSum>0 ? `
     <div class="tb-section-title" style="margin-top:16px">Прогноз на следующий месяц</div>
@@ -1303,26 +1387,26 @@ function renderFinanceTab(){
     }).join('')}
   ` : '';
 
-  const creditsHtml = credits.length ? `
-    <div class="tb-section-title" style="margin-top:16px">Кредитные обязательства</div>
-    ${credits.map(c=>{
-      const remaining = creditRemaining(c);
-      const ym = monthOf(todayStr());
-      const paidThisMonth = (c.paidMonths||[]).includes(ym);
+  const limitEntries = Object.entries(categoryLimits);
+  const categoryLimitsBox = `
+    <div class="tb-section-title" style="margin-top:16px">Лимиты по категориям</div>
+    ${limitEntries.length===0? '<div class="empty" style="padding:6px 0">Лимиты не заданы</div>' : limitEntries.map(([cat,lim])=>{
+      const spent = expByCat[cat]||0;
+      const pct = lim>0? Math.min(100,(spent/lim*100)) : 0;
+      const over = spent>lim;
       return `
-        <div class="row-entry">
-          <div class="row">
-            <span class="desc"><span class="cat">${c.name}</span><span class="place">${c.person} · платёж ${c.paymentDay} числа</span></span>
-            <span class="leader"></span>
-            <span class="amount">${fmt(remaining)} ₽</span>
-            <button class="del" data-del-credit="${c.id}" aria-label="Удалить">×</button>
-          </div>
-          <div class="row-meta">
-            ${paidThisMonth? '<span class="tag" style="color:var(--forest)">Оплачено в этом месяце</span>' : `<button class="buy-btn" data-pay-credit="${c.id}">Списать платёж ${fmt(c.monthlyPayment)} ₽</button>`}
-          </div>
+        <div class="bd-row">
+          <span class="bd-label">${cat}</span>
+          <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${pct.toFixed(0)}%;background:${over?'var(--rust)':'var(--copper)'}"></span></span>
+          <span class="bd-amount" style="${over?'color:var(--rust)':''}">${fmt(spent)}/${fmt(lim)} ₽</span>
         </div>`;
     }).join('')}
-  ` : '';
+    <div class="row" style="gap:6px;margin-top:8px">
+      <select id="limCategory" style="flex:1;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select>
+      <input type="number" id="limAmount" placeholder="лимит, ₽" style="width:90px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
+      <button type="button" id="limSaveBtn" class="buy-btn">Задать</button>
+    </div>
+  `;
 
   const totalsBox = `
     <div class="totals-box">
@@ -1336,6 +1420,7 @@ function renderFinanceTab(){
           <span class="bd-amount">${fmt(val)} ₽</span>
         </div>`).join('') : '<div class="empty" style="padding:8px 0">Нет расходов</div>'}
       ${typeBox}
+      ${categoryLimitsBox}
       <div class="tb-section-title">Доходы — ${fmt(totalInc)} ₽</div>
       ${incSorted.length? incSorted.map(([cat,val],i)=>`
         <div class="bd-row">
@@ -1348,6 +1433,7 @@ function renderFinanceTab(){
       </div>
       ${forecastBox}
       ${trendBox}
+      <div class="tb-section-title" style="margin-top:16px">Совет от ИИ</div>
     </div>
   `;
 
@@ -1371,7 +1457,9 @@ function renderFinanceTab(){
           <div class="row-meta">
             ${e.person? `<span class="tag person">${e.person}</span>`:''}
             ${e.accountId? (()=>{ const a=accounts.find(x=>x.id===e.accountId); return a? `<span class="tag">${a.owner} · ${a.bank}</span>`:''; })():''}
+            ${e.creditId? (()=>{ const c=credits.find(x=>x.id===e.creditId); return c? `<span class="tag" style="color:var(--rust)">Кредит: ${c.name}</span>`:''; })():''}
             ${e.expType? `<span class="tag">${e.expType}</span>`:''}
+            ${(e.tags&&e.tags.length)? e.tags.map(t=>`<span class="tag" style="color:var(--copper)">#${t}</span>`).join(''):''}
             ${e.paymentMethod? `<span class="tag">${e.paymentMethod}</span>`:''}
             ${e.recurring==='Регулярный'? `<span class="tag recurring">Регулярный</span>`:''}
           </div>
@@ -1387,10 +1475,15 @@ function renderFinanceTab(){
           <option value="">Без привязки к счёту</option>
           ${accounts.map(a=>`<option value="${a.id}">${a.owner} · ${a.bank}</option>`).join('')}
         </select></div>
+        ${credits.length? `<div class="full"><label>Платёж по кредиту (если применимо)</label><select id="expCredit">
+          <option value="">Не связано с кредитом</option>
+          ${credits.map(c=>`<option value="${c.id}">${c.person} · ${c.name}</option>`).join('')}
+        </select></div>` : ''}
         <div><label>Место/магазин</label><input type="text" id="place" placeholder="напр., Пятёрочка"></div>
         <div><label>Способ оплаты</label><select id="paymentMethod"><option>Карта</option><option>Наличные</option></select></div>
         <div class="full"><label>Периодичность</label><select id="recurring"><option>Разовый</option><option>Регулярный</option></select></div>
         <div class="full"><label>Заметка</label><input type="text" id="note" placeholder="необязательно"></div>
+        <div class="full"><label>Теги (через запятую)</label><input type="text" id="expTags" placeholder="напр., отпуск, ремонт"></div>
         <button type="submit" class="submit">Добавить расход</button>
       </form>
       <div class="list">${rowsHtml}</div>
@@ -1432,29 +1525,46 @@ function renderFinanceTab(){
       ${renderExpectedIncomes()}
     `;
   } else if(financeSub==='credits'){
+    const activeCredits = credits.filter(c=>creditRemaining(c)>0);
+    const sorted = [...activeCredits].sort((a,b)=>{
+      if(debtStrategy==='avalanche') return (b.rate||0)-(a.rate||0);
+      return creditRemaining(a)-creditRemaining(b);
+    });
+    const priorityId = sorted.length? sorted[0].id : null;
+
     body = `
+      <div class="subtabs" style="margin-bottom:12px">
+        <div class="subtab ${debtStrategy==='avalanche'?'active':''}" id="strAvalanche">Лавина (по ставке)</div>
+        <div class="subtab ${debtStrategy==='snowball'?'active':''}" id="strSnowball">Снежный ком (по сумме)</div>
+      </div>
       <form class="add" id="creditForm">
         <div class="full"><label>Новое кредитное обязательство</label></div>
         <div><label>Владелец</label><select id="crPerson">${PEOPLE.map(p=>`<option>${p}</option>`).join('')}</select></div>
-        <div><label>Название</label><input type="text" id="crName" placeholder="напр., Кредитка Тбанк"></div>
-        <div><label>Остаток долга, ₽</label><input type="number" id="crTotal" step="0.01" min="0"></div>
+        <div><label>Тип</label><select id="crType"><option>Кредит</option><option>Ипотека</option><option>Кредитная карта</option></select></div>
+        <div class="full"><label>Название</label><input type="text" id="crName" placeholder="напр., Кредитка Тбанк"></div>
+        <div><label>Сумма долга, ₽</label><input type="number" id="crTotal" step="0.01" min="0"></div>
+        <div><label>Ставка, %</label><input type="number" id="crRate" step="0.01" min="0"></div>
         <div><label>Платёж/мес, ₽</label><input type="number" id="crPayment" step="0.01" min="0"></div>
-        <div class="full"><label>День платежа</label><input type="number" id="crDay" min="1" max="31" value="1"></div>
+        <div><label>День платежа</label><input type="number" id="crDay" min="1" max="31" value="1"></div>
         <button type="submit" class="submit">Добавить кредит</button>
       </form>
       ${credits.length===0? '<div class="empty">Кредитных обязательств нет.</div>' : credits.map(c=>{
         const remaining = creditRemaining(c);
-        const ym = monthOf(todayStr());
-        const paidThisMonth = (c.paidMonths||[]).includes(ym);
+        const paidThisMonth = creditPaidThisMonth(c);
+        const isPriority = c.id===priorityId;
         return `
           <div class="row-entry">
             <div class="row">
-              <span class="desc"><span class="cat">${c.name}</span><span class="place">${c.person} · платёж ${c.paymentDay} числа</span></span>
+              <span class="desc">
+                <span class="cat">${c.name}</span>
+                <span class="place">${c.creditType||'Кредит'} · ${c.person} · ставка ${c.rate!=null?c.rate:'—'}% · платёж ${c.paymentDay} числа</span>
+              </span>
               <span class="leader"></span>
               <span class="amount">${fmt(remaining)} ₽</span>
               <button class="del" data-del-credit="${c.id}" aria-label="Удалить">×</button>
             </div>
             <div class="row-meta">
+              ${isPriority? '<span class="tag" style="color:var(--copper);font-weight:600">★ Гасить первым</span>' : ''}
               ${paidThisMonth? '<span class="tag" style="color:var(--forest)">Оплачено в этом месяце</span>' : `<button class="buy-btn" data-pay-credit="${c.id}">Списать платёж ${fmt(c.monthlyPayment)} ₽</button>`}
             </div>
           </div>`;
@@ -1533,7 +1643,12 @@ function renderShoppingTab(){
   const historyChips = shopHistory.length ? `
     <div class="tb-section-title">Из истории</div>
     <div class="chips">
-      ${shopHistory.map(h=>`<button type="button" class="chip" data-quick-add="${h.name}" data-quick-cat="${h.category}">${h.name}</button>`).join('')}
+      ${shopHistory.map(h=>`
+        <span class="chip">
+          <button type="button" class="chip-add" data-quick-add="${h.name}" data-quick-cat="${h.category}">${h.name}</button>
+          <button type="button" class="chip-del" data-del-history="${h.name}" aria-label="Удалить из истории">×</button>
+        </span>
+      `).join('')}
     </div>
   ` : '';
 
@@ -1566,55 +1681,90 @@ function renderShoppingTab(){
 }
 
 /* ============ РЕНДЕР: ЖЕЛАНИЯ / КОПИЛКА ============ */
-function renderWishesTab(){
-  let listHtml='';
-  if(wishes.length===0){
-    listHtml = '<div class="empty">Пока нет желаний. Добавьте мечту ниже 🙂</div>';
-  } else {
-    listHtml = wishes.map(w=>{
-      const pct = w.target>0 ? Math.min(100, (w.saved/w.target*100)) : 0;
-      const done = w.saved>=w.target && w.target>0;
-      const left = Math.max(0, w.target - w.saved);
-      return `
-        <div class="wish">
-          <div class="wish-head">
-            <span class="wish-name">${w.name}</span>
-            <span class="wish-price">${fmt(w.target)} ₽</span>
-            <button class="wish-del" data-del-wish="${w.id}" aria-label="Удалить">×</button>
-          </div>
-          <div class="wish-progress-track"><span class="wish-progress-fill ${done?'done':''}" style="width:${pct}%"></span></div>
-          <div class="wish-info">
-            <span class="wish-saved">Накоплено: ${fmt(w.saved||0)} ₽ (${pct.toFixed(0)}%)</span>
-            <span>${done? '' : 'осталось '+fmt(left)+' ₽'}</span>
-          </div>
-          ${done? '<div class="wish-done-badge">✓ Цель достигнута!</div>' : `
-            <div class="wish-add-row">
-              <input type="number" inputmode="decimal" placeholder="отложить сумму" data-wish-input="${w.id}">
-              <button data-wish-add="${w.id}">Отложить</button>
-            </div>`}
-          ${w.person? `<div style="margin-top:6px"><span class="tag person">${w.person}</span></div>`:''}
-        </div>`;
-    }).join('');
+/* ============ РЕНДЕР: ЦЕЛИ ============ */
+/* ============ РЕНДЕР: ИСТОРИЯ ============ */
+function renderHistoryTab(){
+  let merged = [
+    ...expenses.map(e=>({...e, kind:'exp'})),
+    ...incomes.map(e=>({...e, kind:'inc'}))
+  ].sort((a,b)=> a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+
+  if(histFilterPerson){
+    merged = merged.filter(r=>r.person===histFilterPerson);
+  }
+  if(histFilterCategory){
+    merged = merged.filter(r=>r.category===histFilterCategory);
+  }
+  if(histFilterText.trim()){
+    const q = histFilterText.trim().toLowerCase();
+    merged = merged.filter(r=>{
+      const inNote = r.note && r.note.toLowerCase().includes(q);
+      const inTags = r.tags && r.tags.some(t=>t.toLowerCase().includes(q));
+      const inCat = r.category && r.category.toLowerCase().includes(q);
+      return inNote || inTags || inCat;
+    });
   }
 
-  const totalTarget = wishes.reduce((s,w)=>s+(w.target||0),0);
-  const totalSaved = wishes.reduce((s,w)=>s+(w.saved||0),0);
+  const allCats = [...new Set([...expenses.map(e=>e.category), ...incomes.map(e=>e.category)])];
 
-  return `
-    <form class="add" id="wishForm">
-      <div class="full"><label>Желание / крупная покупка</label><input type="text" id="wName" placeholder="напр., отпуск в горах" required></div>
-      <div><label>Цель, ₽</label><input type="number" id="wTarget" step="0.01" min="0" required></div>
-      <button type="submit" class="submit">Добавить желание</button>
+  const filterHtml = `
+    <form class="add" id="histFilterForm" style="margin-bottom:14px">
+      <div class="full"><label>Поиск (заметка, тег, категория)</label><input type="text" id="histText" placeholder="напр., отпуск" value="${histFilterText}"></div>
+      <div><label>Кто</label><select id="histPerson">
+        <option value="">Все</option>
+        ${PEOPLE.map(p=>`<option value="${p}" ${histFilterPerson===p?'selected':''}>${p}</option>`).join('')}
+      </select></div>
+      <div><label>Категория</label><select id="histCategory">
+        <option value="">Все</option>
+        ${allCats.map(c=>`<option value="${c}" ${histFilterCategory===c?'selected':''}>${c}</option>`).join('')}
+      </select></div>
     </form>
+  `;
+
+  if(merged.length===0){
+    return filterHtml + '<div class="empty">Ничего не найдено.</div>';
+  }
+
+  let lastLabel = null;
+  const listHtml = merged.map(r=>{
+    const label = dateLabel(r.date);
+    const headerHtml = label!==lastLabel ? `<div class="date-header">${label}</div>` : '';
+    lastLabel = label;
+    const isExp = r.kind==='exp';
+    return `
+      ${headerHtml}
+      <div class="row-entry">
+        <div class="row">
+          <span class="date">${shortDate(r.date)}</span>
+          <span class="desc">
+            <span class="cat">${r.category}</span>
+            ${r.note? `<span class="note">${r.note}</span>`:''}
+          </span>
+          <span class="leader"></span>
+          <span class="amount" style="color:${isExp?'var(--rust)':'var(--forest)'}">${isExp?'−':'+'}${fmt(r.amount)} ₽</span>
+          <button class="del" data-hist-del="${r.kind}:${r.id}" aria-label="Удалить">×</button>
+        </div>
+        <div class="row-meta">
+          ${r.person? `<span class="tag person">${r.person}</span>`:''}
+          ${isExp && r.expType? `<span class="tag">${r.expType}</span>`:''}
+          ${(isExp && r.tags && r.tags.length)? r.tags.map(t=>`<span class="tag" style="color:var(--copper)">#${t}</span>`).join(''):''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const totalExpAll = merged.filter(r=>r.kind==='exp').reduce((s,e)=>s+e.amount,0);
+  const totalIncAll = merged.filter(r=>r.kind==='inc').reduce((s,e)=>s+e.amount,0);
+
+  return filterHtml + `
     <div class="list">${listHtml}</div>
-    ${wishes.length? `<div class="totals">
-      <div class="row2"><span>Всего накоплено</span><span class="pos">${fmt(totalSaved)} ₽</span></div>
-      <div class="row2 total"><span>Общая цель</span><span>${fmt(totalTarget)} ₽</span></div>
-    </div>`:''}
+    <div class="totals">
+      <div class="row2"><span>Всего доходов</span><span class="pos">+${fmt(totalIncAll)} ₽</span></div>
+      <div class="row2 total"><span>Всего расходов</span><span class="neg">−${fmt(totalExpAll)} ₽</span></div>
+    </div>
   `;
 }
 
-/* ============ РЕНДЕР: ЦЕЛИ ============ */
 function renderGoalsTab(){
   let listHtml='';
   if(goals.length===0){
@@ -1720,14 +1870,25 @@ function render(){
   const totalIncAll = incomes.reduce((s,e)=>s+e.amount,0);
   const balance = totalIncAll - totalExpAll;
 
+  const paceYm = todayStr().slice(0,7);
+  const paceExp = expenses.filter(e=>monthOf(e.date)===paceYm).reduce((s,e)=>s+e.amount,0);
+  const paceInc = incomes.filter(e=>monthOf(e.date)===paceYm).reduce((s,e)=>s+e.amount,0);
+  const paceDaysInMonth = new Date(parseInt(paceYm.slice(0,4)), parseInt(paceYm.slice(5,7)), 0).getDate();
+  const paceDayNow = parseInt(todayStr().slice(8,10),10);
+  const paceDaysLeft = Math.max(1, paceDaysInMonth - paceDayNow + 1);
+  const paceSuggested = Math.max(0, (paceInc - paceExp) / paceDaysLeft);
+
   let content = '';
   if(activeTab==='home') content = renderHomeTab();
   else if(activeTab==='finance') content = renderFinanceTab();
   else if(activeTab==='shopping') content = renderShoppingTab();
-  else if(activeTab==='wishes') content = renderWishesTab();
-  else content = renderGoalsTab();
+  else if(activeTab==='goals') content = renderGoalsTab();
+  else if(activeTab==='accounts') content = renderAccountsTab();
+  else content = renderHistoryTab();
 
   card.innerHTML = `
+    <button id="enablePush" class="bell-btn" aria-label="Включить уведомления">🔔</button>
+    <button id="openHistory" class="bell-btn history-btn" aria-label="История">📜</button>
     <h1>Гроссбух</h1>
     <div class="sub">семейный бюджет</div>
     <div class="sync-status ${connected?'':'offline'}">${connected?'● синхронизировано':'○ нет связи с базой'}</div>
@@ -1740,13 +1901,13 @@ function render(){
       <span>Лимит на сегодня</span>
       <input type="number" id="dailyLimitInput" inputmode="decimal" placeholder="не задан" value="${dailyLimit!=null?dailyLimit:''}">
     </div>
-    <button id="enablePush" style="margin-bottom:14px;width:100%;padding:10px;border-radius:6px;border:1px solid var(--line);background:#fff;font-family:'Bitter',Georgia,serif;font-size:14px;cursor:pointer;-webkit-tap-highlight-color:transparent;">Включить уведомления</button>
+    <div class="sync-status" style="margin-top:-10px">Рекомендуем: ~${fmt(paceSuggested)} ₽/день до конца месяца</div>
     <div class="tabs">
       <button class="tab ${activeTab==='home'?'active':''}" id="tabHome">Главная</button>
       <button class="tab ${activeTab==='finance'?'active':''}" id="tabFinance">Финансы</button>
       <button class="tab ${activeTab==='shopping'?'active':''}" id="tabShopping">Покупки</button>
-      <button class="tab ${activeTab==='wishes'?'active':''}" id="tabWishes">Желания</button>
       <button class="tab ${activeTab==='goals'?'active':''}" id="tabGoals">Цели</button>
+      <button class="tab ${activeTab==='accounts'?'active':''}" id="tabAccounts">Счета</button>
     </div>
     ${content}
   `;
@@ -1770,24 +1931,12 @@ function render(){
   document.getElementById('tabHome').onclick = ()=>switchTab('home');
   document.getElementById('tabFinance').onclick = ()=>switchTab('finance');
   document.getElementById('tabShopping').onclick = ()=>switchTab('shopping');
-  document.getElementById('tabWishes').onclick = ()=>switchTab('wishes');
   document.getElementById('tabGoals').onclick = ()=>switchTab('goals');
+  document.getElementById('tabAccounts').onclick = ()=>switchTab('accounts');
+  document.getElementById('openHistory').onclick = (ev)=>{ ev.preventDefault(); switchTab('history'); };
 
   if(activeTab==='home'){
-    document.getElementById('calPrev').onclick = ()=>{ homeCalMonth = shiftMonth(homeCalMonth,-1); render(); };
-    document.getElementById('calNext').onclick = ()=>{ homeCalMonth = shiftMonth(homeCalMonth,1); render(); };
-    card.querySelectorAll('[data-cal-day]').forEach(b=>{
-      b.onclick = ()=>{ homeViewDate = b.getAttribute('data-cal-day'); render(); };
-    });
-    card.querySelectorAll('[data-del-account]').forEach(b=> b.onclick=()=>deleteAccount(b.getAttribute('data-del-account')));
-    document.getElementById('accountForm').onsubmit = (ev)=>{
-      ev.preventDefault();
-      const owner = document.getElementById('accOwner').value;
-      const bank = document.getElementById('accBank').value.trim();
-      const balance = parseFloat(document.getElementById('accBalance').value);
-      if(!bank || isNaN(balance)) return;
-      addAccount(owner, bank, balance);
-    };
+    // дашборд без интерактивных элементов
   } else if(activeTab==='finance'){
     document.getElementById('prevMonth').onclick = ()=>{ viewMonth = shiftMonth(viewMonth,-1); render(); };
     document.getElementById('nextMonth').onclick = ()=>{ viewMonth = shiftMonth(viewMonth,1); render(); };
@@ -1802,7 +1951,18 @@ function render(){
     if(tMonth) tMonth.onclick = ()=>{ trendGranularity='month'; render(); };
     if(tYear) tYear.onclick = ()=>{ trendGranularity='year'; render(); };
     card.querySelectorAll('[data-del-credit]').forEach(b=> b.onclick=()=>deleteCredit(b.getAttribute('data-del-credit')));
-    card.querySelectorAll('[data-pay-credit]').forEach(b=> b.onclick=()=>payCreditThisMonth(b.getAttribute('data-pay-credit')));
+    card.querySelectorAll('[data-pay-credit]').forEach(b=> b.onclick=()=>payCreditNow(b.getAttribute('data-pay-credit')));
+    const limBtn = document.getElementById('limSaveBtn');
+    if(limBtn) limBtn.onclick = ()=>{
+      const cat = document.getElementById('limCategory').value;
+      const val = parseFloat(document.getElementById('limAmount').value);
+      if(!val || val<=0) return;
+      setCategoryLimit(cat, val);
+    };
+    const strA = document.getElementById('strAvalanche');
+    const strS = document.getElementById('strSnowball');
+    if(strA) strA.onclick = ()=>{ debtStrategy='avalanche'; render(); };
+    if(strS) strS.onclick = ()=>{ debtStrategy='snowball'; render(); };
 
     if(financeSub==='expenses'){
       const f = document.getElementById('addForm');
@@ -1819,7 +1979,9 @@ function render(){
           document.getElementById('recurring').value,
           getDevicePerson(),
           document.getElementById('expAccount').value || null,
-          document.getElementById('expType').value);
+          document.getElementById('expType').value,
+          (document.getElementById('expCredit')? document.getElementById('expCredit').value : '') || null,
+          document.getElementById('expTags').value.split(',').map(t=>t.trim()).filter(Boolean));
       };
       card.querySelectorAll('[data-del-exp]').forEach(b=> b.onclick=()=>deleteExpense(b.getAttribute('data-del-exp')));
     } else if(financeSub==='income'){
@@ -1855,10 +2017,11 @@ function render(){
         ev.preventDefault();
         const name = document.getElementById('crName').value.trim();
         const total = parseFloat(document.getElementById('crTotal').value);
+        const rate = parseFloat(document.getElementById('crRate').value);
         const payment = parseFloat(document.getElementById('crPayment').value);
         const day = parseInt(document.getElementById('crDay').value,10) || 1;
         if(!name || isNaN(total) || isNaN(payment)) return;
-        addCredit(document.getElementById('crPerson').value, name, total, payment, day);
+        addCredit(document.getElementById('crPerson').value, name, document.getElementById('crType').value, total, isNaN(rate)?null:rate, payment, day);
       };
     }
   } else if(activeTab==='shopping'){
@@ -1883,6 +2046,9 @@ function render(){
     card.querySelectorAll('[data-quick-add]').forEach(b=>{
       b.onclick = ()=> addShopItem(b.getAttribute('data-quick-add'), b.getAttribute('data-quick-cat'), getDevicePerson(), 1);
     });
+    card.querySelectorAll('[data-del-history]').forEach(b=>{
+      b.onclick = ()=> deleteShopHistoryItem(b.getAttribute('data-del-history'));
+    });
     card.querySelectorAll('.shop-item').forEach(el=>{
       el.addEventListener('click', (ev)=>{
         if(ev.target.closest('.no-toggle')) return;
@@ -1903,25 +2069,7 @@ function render(){
     if(cb) cb.onclick = clearBoughtShop;
     const rl = document.getElementById('restoreLastList');
     if(rl) rl.onclick = restoreLastShoppingList;
-  } else if(activeTab==='wishes'){
-    document.getElementById('wishForm').onsubmit = (ev)=>{
-      ev.preventDefault();
-      const name = document.getElementById('wName').value.trim();
-      const target = parseFloat(document.getElementById('wTarget').value);
-      if(!name || !target || target<=0) return;
-      addWish(name, target, getDevicePerson());
-    };
-    card.querySelectorAll('[data-del-wish]').forEach(b=> b.onclick=()=>deleteWish(b.getAttribute('data-del-wish')));
-    card.querySelectorAll('[data-wish-add]').forEach(b=>{
-      b.onclick = ()=>{
-        const id = b.getAttribute('data-wish-add');
-        const inp = card.querySelector(`[data-wish-input="${id}"]`);
-        const v = parseFloat(inp.value);
-        if(!v || v<=0) return;
-        addToWish(id, v);
-      };
-    });
-  } else {
+  } else if(activeTab==='goals'){
     document.getElementById('goalForm').onsubmit = (ev)=>{
       ev.preventDefault();
       const name = document.getElementById('gName').value.trim();
@@ -1939,6 +2087,31 @@ function render(){
         addToGoal(id, v);
       };
     });
+  } else if(activeTab==='accounts'){
+    card.querySelectorAll('[data-del-account]').forEach(b=> b.onclick=()=>deleteAccount(b.getAttribute('data-del-account')));
+    document.getElementById('accountForm').onsubmit = (ev)=>{
+      ev.preventDefault();
+      const owner = document.getElementById('accOwner').value;
+      const bank = document.getElementById('accBank').value.trim();
+      const balance = parseFloat(document.getElementById('accBalance').value);
+      if(!bank || isNaN(balance)) return;
+      addAccount(owner, bank, balance);
+    };
+  } else {
+    card.querySelectorAll('[data-hist-del]').forEach(b=>{
+      b.onclick = ()=>{
+        const [kind, id] = b.getAttribute('data-hist-del').split(':');
+        if(kind==='exp') deleteExpense(id); else deleteIncome(id);
+      };
+    });
+    const hText = document.getElementById('histText');
+    const hPerson = document.getElementById('histPerson');
+    const hCategory = document.getElementById('histCategory');
+    const hForm = document.getElementById('histFilterForm');
+    if(hForm) hForm.onsubmit = (ev)=> ev.preventDefault();
+    if(hText) hText.onchange = ()=>{ histFilterText = hText.value; render(); };
+    if(hPerson) hPerson.onchange = ()=>{ histFilterPerson = hPerson.value; render(); };
+    if(hCategory) hCategory.onchange = ()=>{ histFilterCategory = hCategory.value; render(); };
   }
 }
 </script>
