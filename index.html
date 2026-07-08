@@ -1,0 +1,2277 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Гроссбух">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="theme-color" content="#DEE3D6">
+<title>Гроссбух</title>
+<link rel="manifest" href="manifest.json">
+<script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+<script>
+  window.OneSignalDeferred = window.OneSignalDeferred || [];
+  OneSignalDeferred.push(async function(OneSignal) {
+    await OneSignal.init({
+      appId: "88ee6a98-6240-4163-affd-f898481352d6",
+      safari_web_id: "web.onesignal.auto.1a94b592-c98a-427e-9490-520bfcd23754",
+      serviceWorkerPath: "budget-/OneSignalSDKWorker.js",
+      serviceWorkerParam: { scope: "/budget-/" },
+    });
+  });
+</script>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Bitter:ital,wght@0,400;0,500;0,600;0,700;1,400&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #DEE3D6;
+    --paper: #EEF1E9;
+    --line: #C9CFC0;
+    --ink: #1C2B22;
+    --ink-soft: #5B6B5F;
+    --copper: #A6672C;
+    --copper-text: #955C27;
+    --forest: #2F5233;
+    --rust: #A63A2E;
+  }
+  *{box-sizing:border-box;}
+  html{ -webkit-text-size-adjust: 100%; }
+  body{
+    margin:0;
+    min-height:100vh;
+    background: var(--bg);
+    background-image: radial-gradient(circle at 1px 1px, rgba(28,43,34,0.06) 1px, transparent 0);
+    background-size: 18px 18px;
+    display:flex;
+    justify-content:center;
+    padding: max(24px, env(safe-area-inset-top)) 16px calc(40px + env(safe-area-inset-bottom));
+    font-family: 'Bitter', Georgia, serif;
+    color: var(--ink);
+    -webkit-font-smoothing: antialiased;
+  }
+  .card{
+    position:relative;
+    width:100%;
+    max-width:440px;
+    background: var(--paper);
+    box-shadow: 0 24px 48px rgba(28,43,34,0.16);
+    padding: 34px 26px 26px;
+  }
+  .bell-btn{
+    position:absolute;
+    top:12px;
+    right:14px;
+    width:40px; height:40px;
+    border-radius:50%;
+    border:1px solid var(--line);
+    background:#fff;
+    font-size:16px;
+    line-height:1;
+    cursor:pointer;
+    z-index:5;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .bell-btn:active{ background: rgba(28,43,34,0.06); }
+  .history-btn{ right:56px; }
+  .card::before, .card::after{
+    content:'';
+    position:absolute;
+    left:0; right:0;
+    height:14px;
+    background: radial-gradient(circle at 10px 7px, var(--bg) 6px, transparent 6.5px);
+    background-size: 20px 14px;
+  }
+  .card::before{ top:-1px; }
+  .card::after{ bottom:-1px; }
+
+  h1{
+    font-family:'Bitter', Georgia, serif;
+    font-weight:700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    font-size: 24px;
+    text-align:center;
+    margin: 4px 0 2px;
+  }
+  .sub{
+    text-align:center;
+    font-size:12px;
+    color: var(--ink-soft);
+    letter-spacing: 1px;
+    margin-bottom: 14px;
+  }
+  .sync-status{
+    text-align:center;
+    font-size:10px;
+    color: var(--forest);
+    letter-spacing: 0.5px;
+    margin-bottom: 14px;
+  }
+  .sync-status.offline{ color: var(--rust); }
+
+  .balance-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 10px 14px;
+    background: rgba(28,43,34,0.05);
+    border-radius:8px;
+    margin-bottom: 14px;
+    font-size:13px;
+    color: var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:1px;
+  }
+  .balance-bar .balance-val{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:17px;
+    font-weight:600;
+    letter-spacing:0;
+  }
+  .balance-bar .balance-val.pos{ color: var(--forest); }
+  .balance-bar .balance-val.neg{ color: var(--rust); }
+  .limit-bar{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    padding: 8px 14px;
+    background: rgba(166,103,44,0.08);
+    border-radius:8px;
+    margin-bottom: 14px;
+    font-size:12px;
+    color: var(--ink-soft);
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+  }
+  .limit-bar input{
+    width:100px;
+    text-align:right;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:15px;
+    border:none;
+    background:transparent;
+    color: var(--copper-text);
+    font-weight:600;
+  }
+
+  .tabs{
+    display:flex;
+    gap:4px;
+    border-bottom: 2px solid var(--ink);
+    margin-bottom: 18px;
+    position: sticky;
+    top: env(safe-area-inset-top, 0px);
+    background: var(--paper);
+    z-index: 20;
+    box-shadow: 0 4px 8px -4px rgba(28,43,34,0.08);
+  }
+  .tab{
+    flex:1;
+    text-align:center;
+    padding: 10px 2px;
+    font-family:'Bitter', Georgia, serif;
+    font-weight:700;
+    font-size:9.5px;
+    letter-spacing:0.3px;
+    text-transform:uppercase;
+    color: var(--ink-soft);
+    background: rgba(28,43,34,0.03);
+    border:none;
+    border-radius:6px 6px 0 0;
+    cursor:pointer;
+    position:relative;
+    top:2px;
+    white-space:nowrap;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tab.active{
+    color: var(--ink);
+    background: rgba(166,103,44,0.1);
+    border-bottom: 2px solid var(--copper);
+  }
+
+  .home-greeting{
+    font-family:'Bitter', Georgia, serif;
+    font-weight:700;
+    font-size:18px;
+    text-align:center;
+    margin-bottom:16px;
+  }
+
+  .month-nav{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:10px;
+    margin-bottom: 16px;
+  }
+  .calc-display{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:36px;
+    font-weight:600;
+    text-align:right;
+    padding:16px 12px;
+    background: rgba(28,43,34,0.04);
+    border-radius:8px;
+    margin-bottom:14px;
+    overflow-x:auto;
+    white-space:nowrap;
+  }
+  .calc-grid{
+    display:grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap:8px;
+  }
+  .calc-btn{
+    min-height:56px;
+    border:none;
+    border-radius:8px;
+    background:#fff;
+    border:1px solid var(--line);
+    font-family:'IBM Plex Mono', monospace;
+    font-size:20px;
+    color: var(--ink);
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .calc-btn:active{ background: rgba(28,43,34,0.08); }
+  .calc-btn.calc-op{ background: rgba(166,103,44,0.1); color: var(--copper-text); font-weight:700; }
+  .calc-btn.calc-fn{ background: rgba(166,58,46,0.08); color: var(--rust); font-weight:700; }
+  .calc-btn.calc-eq{ background: var(--ink); color: var(--paper); font-weight:700; }
+
+  .month-nav button{
+    background: rgba(28,43,34,0.06);
+    border:none;
+    width:36px; height:36px;
+    border-radius:50%;
+    font-size:16px;
+    color: var(--ink);
+    cursor:pointer;
+    flex-shrink:0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .month-nav button:active{ background: rgba(28,43,34,0.14); }
+  .month-nav .month-label{
+    font-family:'Bitter', Georgia, serif;
+    font-weight:700;
+    font-size:13px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    text-align:center;
+    white-space:nowrap;
+  }
+
+  .subtabs{
+    display:flex;
+    gap:6px;
+    margin-bottom:16px;
+  }
+  .subtab{
+    flex:1;
+    text-align:center;
+    padding:7px 2px;
+    font-size:10.5px;
+    font-weight:600;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:#fff;
+    color: var(--ink-soft);
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .subtab.active{ background: var(--ink); color: var(--paper); border-color: var(--ink); }
+
+  .budget-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:10px;
+    font-size:13px;
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+  .budget-row input{
+    width:110px;
+    text-align:right;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:16px;
+    border:none;
+    border-bottom:1px dashed var(--line);
+    background:transparent;
+    color: var(--ink);
+    padding:2px 2px 4px;
+  }
+  .budget-row input:focus-visible{ outline: 2px solid var(--copper); outline-offset:2px; }
+
+  form.add{
+    display:grid;
+    grid-template-columns: 1fr 1fr;
+    gap:10px;
+    padding: 16px 0 18px;
+    border-top: 1px dashed var(--line);
+    border-bottom: 1px dashed var(--line);
+    margin-bottom: 18px;
+  }
+  form.add .full{ grid-column: 1 / -1; }
+  form.add label{
+    display:block;
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color: var(--ink-soft);
+    margin-bottom:4px;
+  }
+  form.add input, form.add select{
+    width:100%;
+    font-family:'Bitter', Georgia, serif;
+    font-size:16px;
+    padding:10px 10px;
+    border:1px solid var(--line);
+    background:#fff;
+    color: var(--ink);
+    border-radius:6px;
+  }
+  form.add input[type="number"]{ font-family:'IBM Plex Mono', monospace; }
+  form.add input[type="date"]{
+    -webkit-appearance: none;
+    appearance: none;
+    height: 44px;
+    line-height: 1.2;
+    text-align: left;
+    min-width: 0;
+  }
+  form.add input:focus-visible, form.add select:focus-visible{
+    outline:2px solid var(--copper); outline-offset:1px;
+  }
+  button.submit{
+    grid-column: 1 / -1;
+    margin-top:4px;
+    background: var(--ink);
+    color: var(--paper);
+    border:none;
+    padding:14px;
+    font-family:'Bitter', Georgia, serif;
+    font-weight:700;
+    letter-spacing:1px;
+    text-transform:uppercase;
+    font-size:14px;
+    cursor:pointer;
+    border-radius:6px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  button.submit:hover{ background: var(--forest); }
+  button.submit:focus-visible{ outline:2px solid var(--copper); outline-offset:2px; }
+
+  .list{ min-height: 40px; }
+  .row{
+    display:flex;
+    align-items:baseline;
+    gap:6px;
+    padding: 9px 0;
+    font-size:13px;
+  }
+  .row .date{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px;
+    color: var(--ink-soft);
+    width:42px;
+    flex-shrink:0;
+  }
+  .row .desc{
+    display:flex;
+    flex-direction:column;
+    flex-shrink:0;
+    max-width:40%;
+  }
+  .row .cat{ font-weight:600; }
+  .row .place{ font-size:11px; color: var(--ink-soft); }
+  .row .note{ font-size:11px; color: var(--ink-soft); font-style:italic; }
+  .row .leader{
+    flex:1;
+    border-bottom: 1px dotted var(--line);
+    margin: 0 4px 4px;
+  }
+  .row .amount{
+    font-family:'IBM Plex Mono', monospace;
+    font-weight:600;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .row .del{
+    background:none;
+    border:none;
+    color: var(--ink-soft);
+    cursor:pointer;
+    font-size:20px;
+    line-height:1;
+    padding:10px 6px 10px 12px;
+    margin:-10px -6px -10px 0;
+    flex-shrink:0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .row .del:hover, .row .del:active{ color: var(--rust); }
+  .row-entry{ padding: 9px 0; }
+  .row-entry + .row-entry{ border-top: 1px solid rgba(28,43,34,0.05); }
+  .date-header{
+    font-family:'Bitter', Georgia, serif;
+    font-size:11px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color: var(--copper-text);
+    margin-top:14px;
+    padding-bottom:4px;
+    border-bottom:1px solid var(--line);
+  }
+  .date-header:first-child{ margin-top:0; }
+  .row-meta{
+    display:flex;
+    flex-wrap:wrap;
+    align-items:center;
+    gap:6px;
+    margin-top:3px;
+    padding-left:48px;
+  }
+  .tag{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:0.5px;
+    color: var(--ink-soft);
+    background: rgba(28,43,34,0.06);
+    border-radius:3px;
+    padding:2px 6px;
+  }
+  .tag.recurring{ color: var(--copper-text); background: rgba(166,103,44,0.12); }
+  .tag.person{ color: var(--forest); background: rgba(47,82,51,0.12); font-weight:600; }
+  .tag.priority-high{ color: var(--rust); background: rgba(166,58,46,0.12); }
+  .tag.priority-mid{ color: var(--copper-text); background: rgba(166,103,44,0.12); }
+  .tag.priority-low{ color: var(--ink-soft); }
+
+  .buy-btn{
+    margin-left:auto;
+    font-family:'Bitter', Georgia, serif;
+    font-size:11px;
+    color: var(--forest);
+    background: rgba(47,82,51,0.1);
+    border:1px solid rgba(47,82,51,0.3);
+    border-radius:3px;
+    padding:6px 10px;
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .buy-btn:hover{ background: var(--forest); color: var(--paper); }
+
+  .breakdown{
+    margin-top: 14px;
+    padding-top: 12px;
+    border-top: 1px dashed var(--line);
+  }
+  .breakdown-title{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color: var(--ink-soft);
+    margin-bottom:8px;
+  }
+  .bd-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    font-size:12px;
+    margin-bottom:6px;
+  }
+  .bd-row .bd-label{ width:84px; flex-shrink:0; }
+  .bd-row.top .bd-label{ color: var(--rust); font-weight:600; }
+  .bd-row .bd-bar-track{
+    flex:1;
+    height:6px;
+    background: rgba(28,43,34,0.08);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .bd-row .bd-bar-fill{
+    height:100%;
+    background: var(--copper);
+    border-radius:3px;
+  }
+  .bd-row.top .bd-bar-fill{ background: var(--rust); }
+  .bd-row .bd-amount{
+    font-family:'IBM Plex Mono', monospace;
+    min-width:64px;
+    text-align:right;
+    flex-shrink:0;
+    white-space:nowrap;
+  }
+  .bd-row.top .bd-amount{ color: var(--rust); font-weight:600; }
+
+  .totals-box{
+    margin-top:16px;
+    padding:14px;
+    border:2px solid var(--ink);
+    border-radius:8px;
+  }
+  .totals-box .tb-title{
+    font-family:'Bitter', Georgia, serif;
+    font-weight:700;
+    font-size:13px;
+    letter-spacing:2px;
+    text-transform:uppercase;
+    text-align:center;
+    margin-bottom:12px;
+  }
+  .tb-section-title{
+    font-size:10px;
+    text-transform:uppercase;
+    letter-spacing:1px;
+    color: var(--ink-soft);
+    margin:10px 0 6px;
+  }
+  .trend-row{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    margin-bottom:5px;
+  }
+  .trend-month{
+    width:38px;
+    flex-shrink:0;
+    font-size:11px;
+    text-transform:uppercase;
+    color: var(--ink-soft);
+  }
+  .trend-bars{ flex:1; display:flex; flex-direction:column; gap:2px; }
+  .trend-bar-track{
+    height:6px;
+    background: rgba(28,43,34,0.07);
+    border-radius:3px;
+    overflow:hidden;
+  }
+  .trend-bar{ height:100%; border-radius:3px; }
+  .trend-bar.income{ background: var(--forest); }
+  .trend-bar.expense{ background: var(--rust); }
+  .empty{
+    text-align:center;
+    color: var(--ink-soft);
+    font-size:13px;
+    padding: 24px 0;
+  }
+  .donut-wrap{ display:flex; align-items:center; gap:14px; margin:10px 0; }
+  .donut{
+    width:96px; height:96px; border-radius:50%; flex-shrink:0;
+    position:relative;
+  }
+  .donut::after{
+    content:''; position:absolute; inset:22px;
+    background: var(--paper); border-radius:50%;
+  }
+  .donut-legend{ flex:1; display:flex; flex-direction:column; gap:4px; }
+  .donut-legend-row{ display:flex; align-items:center; gap:6px; font-size:11px; }
+  .donut-dot{ width:8px; height:8px; border-radius:50%; flex-shrink:0; }
+  .donut-legend-label{ flex:1; color: var(--ink-soft); }
+  .donut-legend-pct{ font-family:'IBM Plex Mono',monospace; font-weight:600; }
+
+  .totals{
+    margin-top: 12px;
+    padding-top: 14px;
+    border-top: 2px solid var(--ink);
+  }
+  .totals .row2{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    gap:12px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:14px;
+    margin-bottom:4px;
+  }
+  .totals .row2 span:first-child{ flex:1; min-width:0; }
+  .totals .row2 span:last-child{ white-space:nowrap; flex-shrink:0; }
+  .totals .row2.total{ font-weight:600; font-size:16px; }
+  .totals .row2 .neg{ color: var(--rust); }
+  .totals .row2 .pos{ color: var(--forest); }
+
+  /* Список покупок */
+  .shop-row{
+    display:flex;
+    align-items:stretch;
+    gap:8px;
+    margin-bottom:7px;
+  }
+  .shop-item{
+    display:flex;
+    align-items:flex-start;
+    flex-wrap:wrap;
+    gap:8px 10px;
+    padding:11px 10px;
+    border-radius:6px;
+    flex:1;
+    min-width:0;
+    border:1px solid var(--line);
+    background:#fff;
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shop-item:active{ opacity:0.85; }
+  .shop-item.bought{ background: rgba(47,82,51,0.12); border-color: rgba(47,82,51,0.4); }
+  .shop-item.notbought{ background: rgba(166,58,46,0.09); border-color: rgba(166,58,46,0.35); }
+  .shop-del-tile{
+    flex-shrink:0;
+    width:44px;
+    min-height:44px;
+    border-radius:6px;
+    border:1px solid var(--line);
+    background:#fff;
+    color: var(--ink-soft);
+    font-size:18px;
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shop-del-tile:active{ color: var(--rust); border-color: var(--rust); }
+  .chips{
+    display:flex;
+    flex-wrap:wrap;
+    gap:6px;
+    margin-bottom:14px;
+  }
+  .chip{
+    display:inline-flex;
+    align-items:center;
+    gap:4px;
+    font-size:11px;
+    padding:2px 2px 2px 10px;
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:#fff;
+    color: var(--ink-soft);
+  }
+  .chip-add{
+    background:none;
+    border:none;
+    font-size:11px;
+    color: var(--ink-soft);
+    cursor:pointer;
+    padding:3px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .chip-add:active{ color: var(--ink); }
+  .chip-del{
+    background: rgba(28,43,34,0.06);
+    border:none;
+    border-radius:50%;
+    width:26px; height:26px;
+    font-size:13px;
+    line-height:1;
+    color: var(--ink-soft);
+    cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .chip-del:active{ color: var(--rust); background: rgba(166,58,46,0.12); }
+  .modal-overlay{
+    position:fixed; inset:0;
+    background: rgba(28,43,34,0.5);
+    display:flex; align-items:center; justify-content:center;
+    z-index:100;
+    padding:20px;
+  }
+  .modal-box{
+    background: var(--paper);
+    border-radius:10px;
+    padding:20px;
+    max-width:380px;
+    width:100%;
+    max-height:80vh;
+    overflow-y:auto;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.3);
+  }
+  .shop-check{
+    width:32px; height:32px;
+    margin-top:1px;
+    border-radius:50%;
+    border:2px solid var(--ink-soft);
+    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
+    font-size:15px; color:#fff;
+  }
+  .shop-item.bought .shop-check{ background: var(--forest); border-color: var(--forest); }
+  .shop-main{ flex:1; min-width:120px; }
+  .shop-name-row{ display:flex; align-items:center; gap:6px; }
+  .shop-item .shop-name{ font-size:15px; }
+  .shop-item.bought .shop-name{ text-decoration: line-through; color: var(--ink-soft); }
+  .shop-edit{
+    background:none; border:none; color: var(--ink-soft);
+    cursor:pointer; font-size:13px; padding:2px 4px;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shop-edit:active{ color: var(--copper-text); }
+  .shop-item .shop-cat{ font-size:10px; text-transform:uppercase; letter-spacing:0.5px; color: var(--ink-soft); display:block; }
+  .shop-controls{
+    display:flex;
+    align-items:center;
+    gap:8px;
+    flex-shrink:0;
+    flex-wrap:wrap;
+    margin-left:auto;
+  }
+  .qty-stepper{
+    display:flex; align-items:center; gap:0;
+    border:1px solid var(--line); border-radius:6px; overflow:hidden;
+    background:#fff;
+  }
+  .qty-stepper button{
+    width:36px; height:36px;
+    border:none; background: rgba(28,43,34,0.05);
+    font-size:16px; color: var(--ink); cursor:pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .qty-stepper button:active{ background: rgba(28,43,34,0.12); }
+  .qty-stepper .qty-val{
+    min-width:22px; text-align:center;
+    font-family:'IBM Plex Mono', monospace; font-size:14px;
+  }
+  .shop-item .shop-price-input{
+    width:80px;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:16px;
+    padding:6px 8px;
+    border:1px solid var(--line);
+    border-radius:6px;
+    text-align:right;
+  }
+  .shop-item .shop-line-total{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:12px;
+    color: var(--ink-soft);
+    width:100%;
+    text-align:right;
+  }
+  .shop-item .del{
+    background:none; border:none; color: var(--ink-soft);
+    cursor:pointer; font-size:20px; padding:0 0 0 4px;
+    flex-shrink:0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .shop-item .del:active{ color: var(--rust); }
+
+  /* Желания / копилка */
+  .wish{
+    padding:14px;
+    border:1px solid var(--line);
+    background:#fff;
+    border-radius:8px;
+    margin-bottom:12px;
+  }
+  .wish-head{
+    display:flex; align-items:baseline; gap:8px; margin-bottom:8px;
+  }
+  .wish-name{ font-weight:600; font-size:15px; flex:1; }
+  .wish-price{ font-family:'IBM Plex Mono', monospace; font-weight:600; font-size:14px; }
+  .wish-del{
+    background:none; border:none; color: var(--ink-soft);
+    cursor:pointer; font-size:20px; padding:8px 6px 8px 10px;
+    margin:-8px -6px -8px 0;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .wish-del:active{ color: var(--rust); }
+  .wish-progress-track{
+    height:10px; background: rgba(28,43,34,0.08);
+    border-radius:5px; overflow:hidden; margin-bottom:6px;
+  }
+  .wish-progress-fill{ height:100%; background: var(--forest); border-radius:5px; transition:width .3s; }
+  .wish-progress-fill.done{ background: var(--copper); }
+  .wish-info{
+    display:flex; justify-content:space-between;
+    font-size:12px; color: var(--ink-soft); margin-bottom:8px;
+  }
+  .wish-saved{ font-family:'IBM Plex Mono', monospace; }
+  .wish-add-row{ display:flex; gap:6px; }
+  .wish-add-row input{
+    flex:1; font-family:'IBM Plex Mono', monospace; font-size:14px;
+    padding:7px 8px; border:1px solid var(--line); border-radius:5px;
+  }
+  .wish-add-row button{
+    background: var(--forest); color:#fff; border:none;
+    border-radius:5px; padding:7px 12px; font-size:13px; cursor:pointer;
+    -webkit-tap-highlight-color: transparent; white-space:nowrap;
+  }
+  .wish-done-badge{
+    display:inline-block; font-size:10px; text-transform:uppercase;
+    letter-spacing:1px; color: var(--copper-text); font-weight:700; margin-top:4px;
+  }
+
+  .reset{
+    display:block;
+    text-align:center;
+    margin-top:18px;
+    font-size:11px;
+    color: var(--ink-soft);
+    background:none;
+    border:none;
+    text-decoration:underline;
+    cursor:pointer;
+  }
+  .loading{ text-align:center; padding: 40px 0; color: var(--ink-soft); font-size:13px; }
+
+  @media (max-width: 430px){
+    .card{ padding: 28px 18px 22px; }
+    .row{ flex-wrap: wrap; }
+    .row .desc{ max-width: none; flex: 1 1 auto; }
+    .row .leader{ display:none; }
+    .row .amount{ margin-left:auto; }
+    .row-meta{ padding-left: 0; margin-top: 6px; }
+    h1{ font-size: 20px; letter-spacing: 2px; }
+  }
+</style>
+</head>
+<body>
+  <div class="card" id="card">
+    <div class="loading" id="loading">Подключение к базе данных…</div>
+  </div>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getFirestore, doc, setDoc, getDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyB-laTBbPv7cyPjM_KBtHn1qiLQaCdWFq0",
+  authDomain: "semeynyy-byudzhet.firebaseapp.com",
+  projectId: "semeynyy-byudzhet",
+  storageBucket: "semeynyy-byudzhet.firebasestorage.app",
+  messagingSenderId: "605154328627",
+  appId: "1:605154328627:web:18a256ba9c2240a2156346"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getFirestore(app);
+const budgetDocRef = doc(db, "budget", "shared");
+
+const CATEGORIES = ["Продукты","Кафе/Рестораны","Транспорт","Жильё","Развлечения","Здоровье","Одежда","Электроника","Хозтовары","Для дома","Кредиты","Накопления","Другое"];
+const INCOME_CATEGORIES = ["Зарплата","Подработка","Подарок","Возврат","Другое"];
+const SHOP_CATEGORIES = CATEGORIES.filter(c=>c!=='Кредиты' && c!=='Накопления');
+const EXPENSE_TYPES = ["Обязательные","Необходимые","Желаемые"];
+const PEOPLE = ["Артемий","Дарья"];
+const ONESIGNAL_APP_ID = "88ee6a98-6240-4163-affd-f898481352d6";
+const PUSH_WORKER_URL = "https://frosty-frog-05f9.tyoma53st.workers.dev/";
+
+
+async function sendPushToOther(entryPerson, title, message){
+  const other = PEOPLE.find(p=>p!==entryPerson);
+  if(!other) return;
+  try{
+    await fetch(PUSH_WORKER_URL, {
+      method:'POST',
+      headers:{ 'Content-Type':'application/json' },
+      body: JSON.stringify({
+        app_id: ONESIGNAL_APP_ID,
+        filters: [{field:'tag', key:'person', relation:'=', value:other}],
+        headings: {en: title},
+        contents: {en: message}
+      })
+    });
+  }catch(e){ console.error('Не удалось отправить уведомление', e); }
+}
+
+let expenses = [];
+let incomes = [];
+let budgetLimit = null;
+let shopping = [];
+let accounts = [];
+let dailyLimit = null;
+let credits = [];
+let goals = [];
+let categoryLimits = {};
+let histFilterText = '';
+let histFilterPerson = '';
+let histFilterCategory = '';
+let showLimitModal = false;
+let saveError = false;
+
+let calculatorSub = 'basic'; // basic | weight
+let calcDisplay = '0';
+let calcPrevValue = null;
+let calcOperator = null;
+let calcWaitingForOperand = false;
+let unitMeasure = 'kg'; // kg | l | m | pc
+let unitPrice = '';
+let unitQty = '';
+const MEASURES = {
+  kg: { label:'Килограмм', priceUnit:'кг', qtyUnit:'г',  factor:1000 },
+  l:  { label:'Литр',      priceUnit:'л',  qtyUnit:'мл', factor:1000 },
+  m:  { label:'Метр',      priceUnit:'м',  qtyUnit:'см', factor:100 },
+  pc: { label:'Штука',     priceUnit:'шт', qtyUnit:'шт', factor:1 },
+};
+let shopHistory = [];
+let lastShoppingList = [];
+
+let activeTab = 'home';     // home | finance | shopping | goals
+let financeSub = 'expenses';   // expenses | income
+let viewMonth = new Date().toISOString().slice(0,7); // YYYY-MM
+let trendGranularity = 'month'; // day | month | year
+
+let connected = false;
+let firstLoad = true;
+
+function fmt(n){
+  return n.toLocaleString('ru-RU', {minimumFractionDigits:0, maximumFractionDigits:2});
+}
+const DONUT_PALETTE = ['#A6672C','#2F5233','#A63A2E','#5B6B5F','#7A8B6F','#C99A5B','#3D5A47','#8B4A3A','#6B7A5F','#B8895A','#4A6350'];
+function buildDonut(entries){
+  const total = entries.reduce((s,e)=>s+e[1],0);
+  if(total<=0) return '';
+  let acc = 0;
+  const stops = entries.map(([label,val],i)=>{
+    const start = (acc/total*100).toFixed(1);
+    acc += val;
+    const end = (acc/total*100).toFixed(1);
+    return `${DONUT_PALETTE[i%DONUT_PALETTE.length]} ${start}% ${end}%`;
+  }).join(', ');
+  const legend = entries.map(([label,val],i)=>`
+    <div class="donut-legend-row">
+      <span class="donut-dot" style="background:${DONUT_PALETTE[i%DONUT_PALETTE.length]}"></span>
+      <span class="donut-legend-label">${label}</span>
+      <span class="donut-legend-pct">${(val/total*100).toFixed(0)}%</span>
+    </div>`).join('');
+  return `
+    <div class="donut-wrap">
+      <div class="donut" style="background: conic-gradient(${stops});"></div>
+      <div class="donut-legend">${legend}</div>
+    </div>
+  `;
+}
+function todayStr(){ return new Date().toISOString().slice(0,10); }
+function shortDate(iso){ const [y,m,d] = iso.split('-'); return d+'.'+m; }
+function tomorrowStr(){ const d=new Date(); d.setDate(d.getDate()+1); return d.toISOString().slice(0,10); }
+function dateLabel(iso){
+  if(iso===todayStr()) return 'Сегодня';
+  if(iso===tomorrowStr()) return 'Завтра';
+  return shortDate(iso);
+}
+function monthOf(iso){ return iso ? iso.slice(0,7) : ''; }
+const MONTH_NAMES = ["январь","февраль","март","апрель","май","июнь","июль","август","сентябрь","октябрь","ноябрь","декабрь"];
+function monthLabel(ym){
+  const [y,m] = ym.split('-');
+  return MONTH_NAMES[parseInt(m,10)-1] + ' ' + y;
+}
+function shiftMonth(ym, delta){
+  let [y,m] = ym.split('-').map(Number);
+  m += delta;
+  if(m<1){ m=12; y--; }
+  if(m>12){ m=1; y++; }
+  return y + '-' + String(m).padStart(2,'0');
+}
+
+onSnapshot(budgetDocRef, (snap)=>{
+  connected = true;
+  if(snap.exists()){
+    const data = snap.data();
+    expenses = data.expenses || [];
+    incomes = data.incomes || [];
+    budgetLimit = (data.budgetLimit === undefined) ? null : data.budgetLimit;
+    shopping = data.shopping || [];
+    accounts = data.accounts || [];
+    dailyLimit = (data.dailyLimit===undefined)? null : data.dailyLimit;
+    credits = data.credits || [];
+    goals = data.goals || [];
+    shopHistory = data.shopHistory || [];
+    categoryLimits = data.categoryLimits || {};
+    lastShoppingList = data.lastShoppingList || [];
+
+    const oldWishes = data.wishes || [];
+    if(oldWishes.length){
+      oldWishes.forEach(w=>{
+        goals.push({ id:newId(), name:w.name, target:w.target, saved:w.saved||0, person:w.person });
+      });
+      saveAll();
+    }
+  }
+  firstLoad = false;
+  render();
+}, (err)=>{
+  console.error('Ошибка синхронизации', err);
+  connected = false;
+  firstLoad = false;
+  render();
+});
+
+async function saveAll(){
+  try{
+    await setDoc(budgetDocRef, { expenses, incomes, budgetLimit, shopping, accounts, dailyLimit, credits, goals, shopHistory, lastShoppingList, categoryLimits });
+    if(saveError){ saveError = false; render(); }
+  }catch(e){
+    console.error('Не удалось сохранить данные', e);
+    saveError = true;
+    render();
+  }
+}
+
+function newId(){ return Date.now().toString(36)+Math.random().toString(36).slice(2,6); }
+
+/* ---- Архивация старых данных (защита от лимита 1 МБ на документ Firestore) ---- */
+async function archiveOldData(){
+  const cutoff = todayStr().slice(0,7); // YYYY-MM текущего месяца
+  const cutoffDate = shiftMonth(cutoff, -12); // всё старше 12 месяцев назад
+
+  const oldExpenses = expenses.filter(e=>monthOf(e.date) < cutoffDate);
+  const oldIncomes = incomes.filter(e=>monthOf(e.date) < cutoffDate);
+
+  if(oldExpenses.length===0 && oldIncomes.length===0){
+    alert('Нет данных старше 12 месяцев — архивировать нечего.');
+    return;
+  }
+  if(!confirm(`Будет заархивировано: ${oldExpenses.length} расходов и ${oldIncomes.length} доходов (старше ${cutoffDate}). Продолжить?`)) return;
+
+  // Группируем по годам, чтобы каждый архивный документ оставался маленьким
+  const byYear = {};
+  [...oldExpenses.map(e=>({...e, _kind:'exp'})), ...oldIncomes.map(e=>({...e, _kind:'inc'}))].forEach(r=>{
+    const y = r.date.slice(0,4);
+    (byYear[y] = byYear[y] || []).push(r);
+  });
+
+  try{
+    for(const year of Object.keys(byYear)){
+      const archiveRef = doc(db, "budget", "archive_"+year);
+      const snap = await getDoc(archiveRef).catch(()=>null);
+      const existing = (snap && snap.exists()) ? (snap.data().records||[]) : [];
+      await setDoc(archiveRef, { records: [...existing, ...byYear[year]] });
+    }
+    const oldExpIds = new Set(oldExpenses.map(e=>e.id));
+    const oldIncIds = new Set(oldIncomes.map(e=>e.id));
+    expenses = expenses.filter(e=>!oldExpIds.has(e.id));
+    incomes = incomes.filter(e=>!oldIncIds.has(e.id));
+    await saveAll();
+    alert('Готово. Старые данные перенесены в архив и убраны из основного документа.');
+    render();
+  }catch(e){
+    console.error('Ошибка архивации', e);
+    alert('Не удалось заархивировать — проверьте интернет и попробуйте ещё раз.');
+  }
+}
+
+/* ---- Расходы ---- */
+function addExpense(amount, category, note, date, place, paymentMethod, recurring, person, accountId, expType, creditId){
+  expenses.push({ id:newId(), amount, category, note, date, place, paymentMethod, recurring, person, accountId: accountId||null, expType: expType||'Необходимые', creditId: creditId||null });
+  expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
+  saveAll(); render();
+  sendPushToOther(person, 'Новый расход', `${person} добавил(а) расход: ${fmt(amount)} ₽ (${category})`);
+}
+function deleteExpense(id){ expenses = expenses.filter(e=>e.id!==id); saveAll(); render(); }
+
+/* ---- Доходы ---- */
+function addIncome(amount, category, note, date, person, accountId){
+  incomes.push({ id:newId(), amount, category, note, date, person, accountId: accountId||null });
+  incomes.sort((a,b)=> a.date < b.date ? 1 : -1);
+  saveAll(); render();
+  sendPushToOther(person, 'Новый доход', `${person} добавил(а) доход: ${fmt(amount)} ₽ (${category})`);
+}
+function deleteIncome(id){ incomes = incomes.filter(e=>e.id!==id); saveAll(); render(); }
+
+/* ---- Список покупок ---- */
+function addShopItem(name, category, person, qty){
+  shopping.push({ id:newId(), name, category, person, bought:false, price:null, qty: qty||1 });
+  if(!shopHistory.some(h=>h.name.toLowerCase()===name.toLowerCase())){
+    shopHistory.push({ name, category });
+  }
+  saveAll(); render();
+  sendPushToOther(person, 'Новая покупка в списке', `${person} добавил(а) в список: ${name}`);
+}
+function deleteShopHistoryItem(name){
+  shopHistory = shopHistory.filter(h=>h.name!==name);
+  saveAll(); render();
+}
+function deleteShopItem(id){
+  const item = shopping.find(s=>s.id===id);
+  if(item && item.expenseId) expenses = expenses.filter(e=>e.id!==item.expenseId);
+  shopping = shopping.filter(s=>s.id!==id);
+  saveAll(); render();
+}
+function renameShopItem(id){
+  const item = shopping.find(s=>s.id===id);
+  if(!item) return;
+  const name = prompt('Название товара', item.name);
+  if(name===null) return;
+  const trimmed = name.trim();
+  if(!trimmed) return;
+  item.name = trimmed;
+  if(item.expenseId){
+    const ex = expenses.find(e=>e.id===item.expenseId);
+    if(ex) ex.note = trimmed;
+  }
+  saveAll(); render();
+}
+function syncShopExpense(item){
+  const lineTotal = (item.qty||1) * (item.price||0);
+  if(item.bought && item.price){
+    if(item.expenseId){
+      const ex = expenses.find(e=>e.id===item.expenseId);
+      if(ex){ ex.amount = lineTotal; ex.note = item.name + (item.qty>1? ` ×${item.qty}`:''); }
+    } else {
+      const eid = newId();
+      item.expenseId = eid;
+      expenses.push({ id:eid, amount:lineTotal, category:item.category||'Другое', note:item.name+(item.qty>1?` ×${item.qty}`:''), date:todayStr(), place:'', paymentMethod:'Карта', recurring:'Разовый', person:item.person });
+      expenses.sort((a,b)=> a.date < b.date ? 1 : -1);
+    }
+  }
+  if((!item.bought || !item.price) && item.expenseId){
+    expenses = expenses.filter(e=>e.id!==item.expenseId);
+    item.expenseId = null;
+  }
+}
+function toggleBought(id){
+  const item = shopping.find(s=>s.id===id);
+  if(!item) return;
+  item.bought = !item.bought;
+  syncShopExpense(item);
+  saveAll(); render();
+}
+function setShopPrice(id, price){
+  const item = shopping.find(s=>s.id===id);
+  if(!item) return;
+  item.price = price;
+  syncShopExpense(item);
+  saveAll(); render();
+}
+function changeShopQty(id, delta){
+  const item = shopping.find(s=>s.id===id);
+  if(!item) return;
+  item.qty = Math.max(1, (item.qty||1) + delta);
+  syncShopExpense(item);
+  saveAll(); render();
+}
+function clearBoughtShop(){
+  if(!confirm('Убрать все купленные товары из списка? (расходы по ним останутся)')) return;
+  const boughtItems = shopping.filter(s=>s.bought);
+  if(boughtItems.length){
+    lastShoppingList = boughtItems.map(s=>({ name:s.name, category:s.category }));
+  }
+  shopping = shopping.filter(s=>!s.bought);
+  saveAll(); render();
+}
+function restoreLastShoppingList(){
+  const person = getDevicePerson();
+  lastShoppingList.forEach(item=>{
+    shopping.push({ id:newId(), name:item.name, category:item.category, person, bought:false, price:null, qty:1 });
+  });
+  saveAll(); render();
+}
+
+/* ---- Цели (финансовые, без желаний) ---- */
+function addGoal(name, target, person){
+  goals.push({ id:newId(), name, target, saved:0, person });
+  saveAll(); render();
+  sendPushToOther(person, 'Новая цель', `${person} добавил(а) цель: ${name} (${fmt(target)} ₽)`);
+}
+function deleteGoal(id){ goals = goals.filter(g=>g.id!==id); saveAll(); render(); }
+function editGoal(id){
+  const g = goals.find(x=>x.id===id);
+  if(!g) return;
+  const name = prompt('Название цели', g.name);
+  if(name===null) return;
+  const target = prompt('Сумма цели, ₽', g.target);
+  if(target===null) return;
+  const saved = prompt('Накопленная сумма, ₽', g.saved||0);
+  if(saved===null) return;
+  const t = parseFloat(target), s = parseFloat(saved);
+  if(name.trim()) g.name = name.trim();
+  if(!isNaN(t) && t>=0) g.target = t;
+  if(!isNaN(s) && s>=0) g.saved = s;
+  saveAll(); render();
+}
+function addToGoal(id, amount){
+  const g = goals.find(x=>x.id===id);
+  if(!g) return;
+  g.saved = Math.max(0, (g.saved||0) + amount);
+  addExpense(amount, 'Накопления', `Отложено на цель: ${g.name}`, todayStr(), '', 'Карта', 'Разовый', getDevicePerson(), null, 'Необходимые', null);
+}
+
+function switchTab(tab){ activeTab = tab; render(); }
+
+/* ---- Счета и балансы ---- */
+function addAccount(owner, bank, initialBalance){
+  accounts.push({ id:newId(), owner, bank, initialBalance, initialDate: todayStr() });
+  saveAll(); render();
+}
+function deleteAccount(id){ accounts = accounts.filter(a=>a.id!==id); saveAll(); render(); }
+function accountBalanceAsOf(acc, asOfDate){
+  if(asOfDate < acc.initialDate) return null; // до создания счёта баланс неизвестен
+  let bal = acc.initialBalance;
+  incomes.forEach(i=>{ if(i.accountId===acc.id && i.date>acc.initialDate && i.date<=asOfDate) bal += i.amount; });
+  expenses.forEach(e=>{ if(e.accountId===acc.id && e.date>acc.initialDate && e.date<=asOfDate) bal -= e.amount; });
+  return bal;
+}
+function totalBalanceAsOf(asOfDate){
+  return accounts.reduce((s,a)=>{ const v = accountBalanceAsOf(a, asOfDate); return s + (v==null?0:v); }, 0);
+}
+function setDailyLimit(value){ dailyLimit = value; saveAll(); render(); }
+function setCategoryLimit(category, value){
+  if(value==null){ delete categoryLimits[category]; }
+  else { categoryLimits[category] = value; }
+  saveAll(); render();
+}
+
+/* ---- Калькулятор (не хранится в базе, только в памяти сессии) ---- */
+function calcRoundClean(n){
+  return parseFloat(n.toFixed(8));
+}
+function calcCompute(a, b, op){
+  switch(op){
+    case '+': return a+b;
+    case '−': return a-b;
+    case '×': return a*b;
+    case '÷': return b===0 ? 0 : a/b;
+    default: return b;
+  }
+}
+function calcInputDigit(d){
+  if(calcWaitingForOperand){ calcDisplay = d; calcWaitingForOperand = false; }
+  else { calcDisplay = (calcDisplay==='0') ? d : calcDisplay + d; }
+  render();
+}
+function calcInputDot(){
+  if(calcWaitingForOperand){ calcDisplay = '0.'; calcWaitingForOperand = false; }
+  else if(!calcDisplay.includes('.')){ calcDisplay += '.'; }
+  render();
+}
+function calcClear(){
+  calcDisplay = '0'; calcPrevValue = null; calcOperator = null; calcWaitingForOperand = false;
+  render();
+}
+function calcBackspace(){
+  calcDisplay = calcDisplay.length>1 ? calcDisplay.slice(0,-1) : '0';
+  render();
+}
+function calcSetOperator(op){
+  const inputValue = parseFloat(calcDisplay);
+  if(calcPrevValue===null){ calcPrevValue = inputValue; }
+  else if(calcOperator && !calcWaitingForOperand){
+    calcPrevValue = calcRoundClean(calcCompute(calcPrevValue, inputValue, calcOperator));
+    calcDisplay = String(calcPrevValue);
+  }
+  calcOperator = op;
+  calcWaitingForOperand = true;
+  render();
+}
+function calcEquals(){
+  const inputValue = parseFloat(calcDisplay);
+  if(calcOperator!==null && calcPrevValue!==null){
+    calcDisplay = String(calcRoundClean(calcCompute(calcPrevValue, inputValue, calcOperator)));
+    calcPrevValue = null;
+    calcOperator = null;
+    calcWaitingForOperand = true;
+  }
+  render();
+}
+
+/* ---- Кредитные обязательства ---- */
+function addCredit(person, name, creditType, totalDebt, rate, monthlyPayment, paymentDay){
+  credits.push({ id:newId(), person, name, creditType, totalDebt, rate, monthlyPayment, paymentDay });
+  saveAll(); render();
+}
+function deleteCredit(id){ credits = credits.filter(c=>c.id!==id); saveAll(); render(); }
+function creditRemaining(c){
+  const paid = expenses.filter(e=>e.creditId===c.id).reduce((s,e)=>s+e.amount,0);
+  return Math.max(0, c.totalDebt - paid);
+}
+function creditPaidThisMonth(c){
+  const ym = monthOf(todayStr());
+  return expenses.some(e=>e.creditId===c.id && monthOf(e.date)===ym);
+}
+function payCreditNow(id){
+  const c = credits.find(x=>x.id===id);
+  if(!c) return;
+  addExpense(c.monthlyPayment, 'Кредиты', c.name, todayStr(), '', 'Карта', 'Разовый', getDevicePerson(), null, 'Обязательные', c.id);
+}
+
+function getDevicePerson(){
+  let p = localStorage.getItem('devicePerson');
+  if(!p || !PEOPLE.includes(p)){
+    const answer = prompt('Кто вы? Введите: '+PEOPLE.join(' или '));
+    if(answer && PEOPLE.includes(answer.trim())){
+      p = answer.trim();
+      localStorage.setItem('devicePerson', p);
+    }
+  }
+  return (p && PEOPLE.includes(p)) ? p : PEOPLE[0];
+}
+function changeDevicePerson(){
+  localStorage.removeItem('devicePerson');
+  const p = getDevicePerson();
+  if(window.OneSignalDeferred){
+    window.OneSignalDeferred.push(function(OneSignal){ OneSignal.User.addTag('person', p); });
+  }
+  render();
+}
+function switchSub(sub){ financeSub = sub; render(); }
+
+/* ============ РЕНДЕР: ФИНАНСЫ ============ */
+/* ============ РЕНДЕР: СЧЕТА ============ */
+/* ============ РЕНДЕР: КАЛЬКУЛЯТОР ============ */
+function renderCalculatorTab(){
+  return `
+    <div class="subtabs">
+      <div class="subtab ${calculatorSub==='basic'?'active':''}" id="calcSubBasic">Обычный</div>
+      <div class="subtab ${calculatorSub==='weight'?'active':''}" id="calcSubWeight">Цена за единицу</div>
+    </div>
+    ${calculatorSub==='basic' ? renderBasicCalc() : renderWeightCalc()}
+  `;
+}
+
+function renderBasicCalc(){
+  return `
+    <div class="calc-display">${calcDisplay}</div>
+    <div class="calc-grid">
+      <button class="calc-btn calc-fn" data-calc-clear="1">C</button>
+      <button class="calc-btn calc-op" data-calc-op="÷">÷</button>
+      <button class="calc-btn calc-op" data-calc-op="×">×</button>
+      <button class="calc-btn calc-fn" data-calc-back="1">⌫</button>
+
+      <button class="calc-btn" data-calc-digit="7">7</button>
+      <button class="calc-btn" data-calc-digit="8">8</button>
+      <button class="calc-btn" data-calc-digit="9">9</button>
+      <button class="calc-btn calc-op" data-calc-op="−">−</button>
+
+      <button class="calc-btn" data-calc-digit="4">4</button>
+      <button class="calc-btn" data-calc-digit="5">5</button>
+      <button class="calc-btn" data-calc-digit="6">6</button>
+      <button class="calc-btn calc-op" data-calc-op="+">+</button>
+
+      <button class="calc-btn" data-calc-digit="1">1</button>
+      <button class="calc-btn" data-calc-digit="2">2</button>
+      <button class="calc-btn" data-calc-digit="3">3</button>
+      <button class="calc-btn calc-eq" data-calc-equals="1">=</button>
+
+      <button class="calc-btn" data-calc-digit="0" style="grid-column: span 3;">0</button>
+      <button class="calc-btn" data-calc-dot="1">.</button>
+    </div>
+  `;
+}
+
+function renderWeightCalc(){
+  const m = MEASURES[unitMeasure];
+  const price = parseFloat(unitPrice)||0;
+  const qty = parseFloat(unitQty)||0;
+  const result = (price/m.factor)*qty;
+  return `
+    <form class="add" id="weightCalcForm" onsubmit="return false;">
+      <div class="full"><label>Мера</label>
+        <select id="wcMeasure">
+          ${Object.entries(MEASURES).map(([key,mm])=>`<option value="${key}" ${key===unitMeasure?'selected':''}>${mm.label}</option>`).join('')}
+        </select>
+      </div>
+      <div class="full"><label>Цена за 1 ${m.priceUnit}, ₽</label>
+        <input type="number" id="wcPrice" inputmode="decimal" value="${unitPrice}" placeholder="напр., 450">
+      </div>
+      <div class="full"><label>Сколько ${m.qtyUnit} нужно</label>
+        <input type="number" id="wcGrams" inputmode="decimal" value="${unitQty}" placeholder="напр., 156">
+      </div>
+    </form>
+    <div class="totals-box" style="margin-top:16px">
+      <div class="tb-title">Результат</div>
+      <div class="totals">
+        <div class="row2 total"><span id="wcGramsLabel">${qty? fmt(qty):'0'} ${m.qtyUnit} будут стоить</span><span class="pos" id="wcResult">${fmt(result)} ₽</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderAccountsTab(){
+  const today = todayStr();
+  const byOwner = {};
+  accounts.forEach(a=>{ (byOwner[a.owner]=byOwner[a.owner]||[]).push(a); });
+
+  const accountsHtml = Object.keys(byOwner).length===0
+    ? '<div class="empty">Счета ещё не добавлены.</div>'
+    : Object.entries(byOwner).map(([owner,accs])=>`
+        <div class="tb-section-title">${owner}</div>
+        ${accs.map(a=>{
+          const bal = accountBalanceAsOf(a, today);
+          return `
+          <div class="row-entry">
+            <div class="row">
+              <span class="desc"><span class="cat">${a.bank}</span></span>
+              <span class="leader"></span>
+              <span class="amount">${bal==null? '—' : fmt(bal)+' ₽'}</span>
+              <button class="del" data-del-account="${a.id}" aria-label="Удалить счёт">×</button>
+            </div>
+          </div>`;
+        }).join('')}
+      `).join('');
+
+  return `
+    <form class="add" id="accountForm">
+      <div class="full"><label>Новый счёт</label></div>
+      <div><label>Владелец</label><select id="accOwner">${PEOPLE.map(p=>`<option>${p}</option>`).join('')}</select></div>
+      <div><label>Банк</label><input type="text" id="accBank" placeholder="напр., Тбанк"></div>
+      <div class="full"><label>Текущий остаток, ₽</label><input type="number" id="accBalance" step="0.01"></div>
+      <button type="submit" class="submit">Добавить счёт</button>
+    </form>
+    <div class="list">${accountsHtml}</div>
+    <div class="tb-section-title" style="margin-top:20px">Обслуживание базы</div>
+    <button type="button" class="reset" id="archiveBtn">Архивировать данные старше 12 месяцев</button>
+  `;
+}
+
+/* ============ РЕНДЕР: ГЛАВНАЯ (ДАШБОРД) ============ */
+function renderHomeTab(){
+  const today = todayStr();
+  const ym = today.slice(0,7);
+  const totalBalance = totalBalanceAsOf(today);
+  const netWorth = totalBalance - credits.reduce((s,c)=>s+creditRemaining(c),0);
+
+  const monthExp = expenses.filter(e=>monthOf(e.date)===ym);
+  const monthInc = incomes.filter(e=>monthOf(e.date)===ym);
+  const totalExp = monthExp.reduce((s,e)=>s+e.amount,0);
+  const totalInc = monthInc.reduce((s,e)=>s+e.amount,0);
+
+
+  const creditsRemaining = credits.reduce((s,c)=>s+creditRemaining(c),0);
+  const upcomingCredits = credits.filter(c=>{
+    const day = parseInt(todayStr().slice(8,10),10);
+    const daysLeft = c.paymentDay - day;
+    return !creditPaidThisMonth(c) && daysLeft>=0 && daysLeft<=3;
+  });
+
+  const goalsSaved = goals.reduce((s,g)=>s+(g.saved||0),0);
+  const goalsTarget = goals.reduce((s,g)=>s+(g.target||0),0);
+
+  const subs = {};
+  monthExp.filter(e=>e.recurring==='Регулярный').forEach(e=>{
+    const key = e.note || e.category;
+    subs[key] = (subs[key]||0) + e.amount;
+  });
+  const subsTotal = Object.values(subs).reduce((s,v)=>s+v,0);
+  const subsList = Object.entries(subs).sort((a,b)=>b[1]-a[1]);
+
+  return `
+    <div class="home-greeting">Привет, ${getDevicePerson()}! 👋</div>
+
+    <div class="totals-box">
+      <div class="tb-title">Общий баланс</div>
+      <div class="totals">
+        <div class="row2 total"><span>Сейчас</span><span class="${totalBalance<0?'neg':'pos'}">${fmt(totalBalance)} ₽</span></div>
+        <div class="row2"><span>Чистый капитал (за&nbsp;вычетом кредитов)</span><span class="${netWorth<0?'neg':'pos'}">${fmt(netWorth)} ₽</span></div>
+      </div>
+    </div>
+
+    <div class="totals-box" style="margin-top:16px">
+      <div class="tb-title">Итого за&nbsp;${monthLabel(ym)}</div>
+      <div class="totals">
+        <div class="row2"><span>Доходы</span><span class="pos">+${fmt(totalInc)} ₽</span></div>
+        <div class="row2"><span>Расходы</span><span class="neg">−${fmt(totalExp)} ₽</span></div>
+        <div class="row2 total"><span>Разница</span><span class="${(totalInc-totalExp)<0?'neg':'pos'}">${(totalInc-totalExp)>=0?'+':''}${fmt(totalInc-totalExp)} ₽</span></div>
+      </div>
+    </div>
+
+    <div class="totals-box" style="margin-top:16px">
+      <div class="tb-title">Кредиты</div>
+      <div class="totals">
+        <div class="row2 total"><span>Остаток долга</span><span class="neg">${fmt(creditsRemaining)} ₽</span></div>
+      </div>
+      ${upcomingCredits.length? upcomingCredits.map(c=>`
+        <div class="row2" style="color:var(--rust)"><span>⚠ ${c.name}</span><span>платёж ${c.paymentDay}&nbsp;числа</span></div>
+      `).join('') : '<div class="empty" style="padding:6px 0">Ближайших платежей нет</div>'}
+    </div>
+
+    <div class="totals-box" style="margin-top:16px">
+      <div class="tb-title">Накопления</div>
+      <div class="totals">
+        <div class="row2"><span>Накоплено</span><span class="pos">${fmt(goalsSaved)} ₽</span></div>
+        <div class="row2 total"><span>Общая цель</span><span>${fmt(goalsTarget)} ₽</span></div>
+      </div>
+    </div>
+
+    ${subsList.length? `
+    <div class="totals-box" style="margin-top:16px">
+      <div class="tb-title">Подписки и&nbsp;регулярные платежи</div>
+      ${subsList.map(([name,val])=>`
+        <div class="row2"><span>${name}</span><span>${fmt(val)} ₽/мес</span></div>
+      `).join('')}
+      <div class="totals" style="margin-top:8px">
+        <div class="row2 total"><span>Итого в месяц</span><span>${fmt(subsTotal)} ₽</span></div>
+      </div>
+    </div>` : ''}
+  `;
+}
+
+function renderFinanceTab(){
+  const monthExp = expenses.filter(e=> monthOf(e.date)===viewMonth);
+  const monthInc = incomes.filter(e=> monthOf(e.date)===viewMonth);
+  const totalExp = monthExp.reduce((s,e)=>s+e.amount,0);
+  const totalInc = monthInc.reduce((s,e)=>s+e.amount,0);
+
+  const monthNav = `
+    <div class="month-nav">
+      <button id="prevMonth" aria-label="Предыдущий месяц">‹</button>
+      <span class="month-label">${monthLabel(viewMonth)}</span>
+      <button id="nextMonth" aria-label="Следующий месяц">›</button>
+    </div>
+  `;
+
+  const subtabs = `
+    <div class="subtabs">
+      <div class="subtab ${financeSub==='expenses'?'active':''}" id="subExp">Расходы</div>
+      <div class="subtab ${financeSub==='income'?'active':''}" id="subInc">Доходы</div>
+      <div class="subtab ${financeSub==='credits'?'active':''}" id="subCredits">Кредиты</div>
+      <div class="subtab ${financeSub==='savings'?'active':''}" id="subSavings">Накопления</div>
+    </div>
+  `;
+
+  // Плашка ИТОГО — по категориям
+  const expByCat = {};
+  monthExp.forEach(e=>{ expByCat[e.category]=(expByCat[e.category]||0)+e.amount; });
+  const incByCat = {};
+  monthInc.forEach(e=>{ incByCat[e.category]=(incByCat[e.category]||0)+e.amount; });
+
+  const expSorted = Object.entries(expByCat).sort((a,b)=>b[1]-a[1]);
+  const incSorted = Object.entries(incByCat).sort((a,b)=>b[1]-a[1]);
+  const maxExp = expSorted.length? expSorted[0][1] : 0;
+  const maxInc = incSorted.length? incSorted[0][1] : 0;
+
+  // Тренд доходы/расходы — Дни / Месяцы / Годы
+  let trendData = [];
+  if(trendGranularity==='day'){
+    let d0 = new Date();
+    for(let i=13;i>=0;i--){
+      const d = new Date(d0); d.setDate(d.getDate()-i);
+      const ds = d.toISOString().slice(0,10);
+      const inc = incomes.filter(e=>e.date===ds).reduce((s,e)=>s+e.amount,0);
+      const exp = expenses.filter(e=>e.date===ds).reduce((s,e)=>s+e.amount,0);
+      trendData.push({ label: shortDate(ds), inc, exp });
+    }
+  } else if(trendGranularity==='year'){
+    const curYear = parseInt(todayStr().slice(0,4),10);
+    for(let y=curYear-3; y<=curYear; y++){
+      const ys = String(y);
+      const inc = incomes.filter(e=>e.date.slice(0,4)===ys).reduce((s,e)=>s+e.amount,0);
+      const exp = expenses.filter(e=>e.date.slice(0,4)===ys).reduce((s,e)=>s+e.amount,0);
+      trendData.push({ label: ys, inc, exp });
+    }
+  } else {
+    const trendMonths = [];
+    let tm = viewMonth;
+    for(let i=0;i<6;i++){ trendMonths.unshift(tm); tm = shiftMonth(tm,-1); }
+    trendData = trendMonths.map(ym=>{
+      const inc = incomes.filter(e=>monthOf(e.date)===ym).reduce((s,e)=>s+e.amount,0);
+      const exp = expenses.filter(e=>monthOf(e.date)===ym).reduce((s,e)=>s+e.amount,0);
+      return { label: monthLabel(ym).split(' ')[0].slice(0,3), inc, exp };
+    });
+  }
+  const trendMax = Math.max(1, ...trendData.map(d=>Math.max(d.inc,d.exp)));
+
+  const trendBox = `
+    <div class="tb-section-title" style="margin-top:16px">Доходы и&nbsp;расходы</div>
+    <div class="subtabs" style="margin-bottom:10px">
+      <div class="subtab ${trendGranularity==='day'?'active':''}" id="trendDay">Дни</div>
+      <div class="subtab ${trendGranularity==='month'?'active':''}" id="trendMonth">Месяцы</div>
+      <div class="subtab ${trendGranularity==='year'?'active':''}" id="trendYear">Годы</div>
+    </div>
+    ${trendData.map(d=>`
+      <div class="trend-row">
+        <span class="trend-month">${d.label}</span>
+        <div class="trend-bars">
+          <div class="trend-bar-track"><div class="trend-bar income" style="width:${(d.inc/trendMax*100).toFixed(0)}%"></div></div>
+          <div class="trend-bar-track"><div class="trend-bar expense" style="width:${(d.exp/trendMax*100).toFixed(0)}%"></div></div>
+        </div>
+      </div>
+    `).join('')}
+  `;
+
+  const recurringSum = monthExp.filter(e=>e.recurring==='Регулярный').reduce((s,e)=>s+e.amount,0);
+  const forecastBox = recurringSum>0 ? `
+    <div class="tb-section-title" style="margin-top:16px">Прогноз на&nbsp;следующий месяц</div>
+    <div class="row2"><span>По регулярным тратам</span><span>~${fmt(recurringSum)} ₽</span></div>
+  ` : '';
+
+  const donutHtml = expSorted.length ? buildDonut(expSorted) : '';
+
+  const typeMap = {};
+  monthExp.forEach(e=>{ const t=e.expType||'Необходимые'; typeMap[t]=(typeMap[t]||0)+e.amount; });
+  const typeBox = totalExp>0 ? `
+    <div class="tb-section-title" style="margin-top:16px">По&nbsp;типу трат</div>
+    ${EXPENSE_TYPES.map(t=>{
+      const val = typeMap[t]||0;
+      const pct = totalExp? (val/totalExp*100) : 0;
+      return `
+        <div class="bd-row">
+          <span class="bd-label">${t}</span>
+          <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${pct.toFixed(0)}%"></span></span>
+          <span class="bd-amount">${pct.toFixed(0)}%</span>
+        </div>`;
+    }).join('')}
+  ` : '';
+
+  const totalsBox = `
+    <div class="totals-box">
+      <div class="tb-title">Итого за&nbsp;${monthLabel(viewMonth)}</div>
+      <div class="tb-section-title">Расходы — ${fmt(totalExp)} ₽</div>
+      ${donutHtml}
+      ${expSorted.length? expSorted.map(([cat,val],i)=>`
+        <div class="bd-row ${i===0?'top':''}">
+          <span class="bd-label">${cat}</span>
+          <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${maxExp?(val/maxExp*100).toFixed(0):0}%"></span></span>
+          <span class="bd-amount">${fmt(val)} ₽</span>
+        </div>`).join('') : '<div class="empty" style="padding:8px 0">Нет расходов</div>'}
+      ${typeBox}
+      <div class="tb-section-title">Доходы — ${fmt(totalInc)} ₽</div>
+      ${incSorted.length? incSorted.map(([cat,val],i)=>`
+        <div class="bd-row">
+          <span class="bd-label">${cat}</span>
+          <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${maxInc?(val/maxInc*100).toFixed(0):0}%;background:var(--forest)"></span></span>
+          <span class="bd-amount" style="color:var(--forest)">${fmt(val)} ₽</span>
+        </div>`).join('') : '<div class="empty" style="padding:8px 0">Нет доходов</div>'}
+      <div class="totals" style="margin-top:12px">
+        <div class="row2 total"><span>Баланс месяца</span><span class="${(totalInc-totalExp)<0?'neg':'pos'}">${(totalInc-totalExp)>=0?'+':''}${fmt(totalInc-totalExp)} ₽</span></div>
+      </div>
+      ${forecastBox}
+      ${trendBox}
+    </div>
+  `;
+
+  let body = '';
+  if(financeSub==='expenses'){
+    let rowsHtml = monthExp.length===0
+      ? '<div class="empty">Нет расходов за&nbsp;этот месяц.</div>'
+      : monthExp.map(e=>`
+        <div class="row-entry">
+          <div class="row">
+            <span class="date">${shortDate(e.date)}</span>
+            <span class="desc">
+              <span class="cat">${e.category}</span>
+              ${e.place? `<span class="place">${e.place}</span>`:''}
+              ${e.note? `<span class="note">${e.note}</span>`:''}
+            </span>
+            <span class="leader"></span>
+            <span class="amount">${fmt(e.amount)} ₽</span>
+            <button class="del" data-del-exp="${e.id}" aria-label="Удалить">×</button>
+          </div>
+          <div class="row-meta">
+            ${e.person? `<span class="tag person">${e.person}</span>`:''}
+            ${e.accountId? (()=>{ const a=accounts.find(x=>x.id===e.accountId); return a? `<span class="tag">${a.owner} · ${a.bank}</span>`:''; })():''}
+            ${e.creditId? (()=>{ const c=credits.find(x=>x.id===e.creditId); return c? `<span class="tag" style="color:var(--rust)">Кредит: ${c.name}</span>`:''; })():''}
+            ${e.expType? `<span class="tag">${e.expType}</span>`:''}
+            ${e.recurring==='Регулярный'? `<span class="tag recurring">Регулярный</span>`:''}
+          </div>
+        </div>`).join('');
+
+    body = `
+      <form class="add" id="addForm">
+        <div class="full"><label>Сумма, ₽</label><input type="number" id="amount" step="0.01" min="0" required></div>
+        <div><label>Категория</label><select id="category">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Дата</label><input type="date" id="date" value="${todayStr()}"></div>
+        <div><label>Тип траты</label><select id="expType">${EXPENSE_TYPES.map(t=>`<option>${t}</option>`).join('')}</select></div>
+        <div class="full"><label>Счёт</label><select id="expAccount">
+          <option value="">Без привязки к счёту</option>
+          ${accounts.map(a=>`<option value="${a.id}">${a.owner} · ${a.bank}</option>`).join('')}
+        </select></div>
+        ${credits.length? `<div class="full"><label>Платёж по&nbsp;кредиту (если применимо)</label><select id="expCredit">
+          <option value="">Не связано с кредитом</option>
+          ${credits.map(c=>`<option value="${c.id}">${c.person} · ${c.name}</option>`).join('')}
+        </select></div>` : ''}
+        <div><label>Место/магазин</label><input type="text" id="place" placeholder="напр., Пятёрочка"></div>
+        <div class="full"><label>Периодичность</label><select id="recurring"><option>Разовый</option><option>Регулярный</option></select></div>
+        <div class="full"><label>Заметка</label><input type="text" id="note" placeholder="необязательно"></div>
+        <button type="submit" class="submit">Добавить расход</button>
+      </form>
+      <div class="list">${rowsHtml}</div>
+    `;
+  } else if(financeSub==='income'){
+    let rowsHtml = monthInc.length===0
+      ? '<div class="empty">Нет доходов за&nbsp;этот месяц.</div>'
+      : monthInc.map(e=>`
+        <div class="row-entry">
+          <div class="row">
+            <span class="date">${shortDate(e.date)}</span>
+            <span class="desc">
+              <span class="cat">${e.category}</span>
+              ${e.note? `<span class="note">${e.note}</span>`:''}
+            </span>
+            <span class="leader"></span>
+            <span class="amount" style="color:var(--forest)">+${fmt(e.amount)} ₽</span>
+            <button class="del" data-del-inc="${e.id}" aria-label="Удалить">×</button>
+          </div>
+          <div class="row-meta">
+            ${e.person? `<span class="tag person">${e.person}</span>`:''}
+            ${e.accountId? (()=>{ const a=accounts.find(x=>x.id===e.accountId); return a? `<span class="tag">${a.owner} · ${a.bank}</span>`:''; })():''}
+          </div>
+        </div>`).join('');
+
+    body = `
+      <form class="add" id="incomeForm">
+        <div class="full"><label>Сумма, ₽</label><input type="number" id="iAmount" step="0.01" min="0" required></div>
+        <div><label>Категория</label><select id="iCategory">${INCOME_CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+        <div><label>Дата</label><input type="date" id="iDate" value="${todayStr()}"></div>
+        <div class="full"><label>Счёт</label><select id="incAccount">
+          <option value="">Без привязки к счёту</option>
+          ${accounts.map(a=>`<option value="${a.id}">${a.owner} · ${a.bank}</option>`).join('')}
+        </select></div>
+        <div class="full"><label>Заметка</label><input type="text" id="iNote" placeholder="напр., аванс"></div>
+        <button type="submit" class="submit">Добавить доход</button>
+      </form>
+      <div class="list">${rowsHtml}</div>
+    `;
+  } else if(financeSub==='credits'){
+    body = `
+      <form class="add" id="creditForm">
+        <div class="full"><label>Новое кредитное обязательство</label></div>
+        <div><label>Владелец</label><select id="crPerson">${PEOPLE.map(p=>`<option>${p}</option>`).join('')}</select></div>
+        <div><label>Тип</label><select id="crType"><option>Кредит</option><option>Ипотека</option><option>Кредитная карта</option></select></div>
+        <div class="full"><label>Название</label><input type="text" id="crName" placeholder="напр., Кредитка Тбанк"></div>
+        <div><label>Сумма долга, ₽</label><input type="number" id="crTotal" step="0.01" min="0"></div>
+        <div><label>Ставка, %</label><input type="number" id="crRate" step="0.01" min="0"></div>
+        <div><label>Платёж/мес, ₽</label><input type="number" id="crPayment" step="0.01" min="0"></div>
+        <div><label>День платежа</label><input type="number" id="crDay" min="1" max="31" value="1"></div>
+        <button type="submit" class="submit">Добавить кредит</button>
+      </form>
+      ${credits.length===0? '<div class="empty">Кредитных обязательств нет.</div>' : credits.map(c=>{
+        const remaining = creditRemaining(c);
+        const paidThisMonth = creditPaidThisMonth(c);
+        return `
+          <div class="row-entry">
+            <div class="row">
+              <span class="desc">
+                <span class="cat">${c.name}</span>
+                <span class="place">${c.creditType||'Кредит'} · ${c.person} · ставка ${c.rate!=null?c.rate:'—'}% · платёж ${c.paymentDay}&nbsp;числа</span>
+              </span>
+              <span class="leader"></span>
+              <span class="amount">${fmt(remaining)} ₽</span>
+              <button class="del" data-del-credit="${c.id}" aria-label="Удалить">×</button>
+            </div>
+            <div class="row-meta">
+              ${paidThisMonth? '<span class="tag" style="color:var(--forest)">Оплачено в этом месяце</span>' : `<button class="buy-btn" data-pay-credit="${c.id}">Списать платёж ${fmt(c.monthlyPayment)} ₽</button>`}
+            </div>
+          </div>`;
+      }).join('')}
+      ${credits.length? `<div class="totals"><div class="row2 total"><span>Общий остаток долга</span><span class="neg">${fmt(credits.reduce((s,c)=>s+creditRemaining(c),0))} ₽</span></div></div>` : ''}
+    `;
+  } else {
+    const totalGoalTarget = goals.reduce((s,g)=>s+(g.target||0),0);
+    const totalGoalSaved = goals.reduce((s,g)=>s+(g.saved||0),0);
+    const goalsListHtml = goals.length===0
+      ? '<div class="empty">Пока нет целей.</div>'
+      : goals.map(g=>{
+          const pct = g.target>0 ? Math.min(100,(g.saved/g.target*100)) : 0;
+          const done = g.saved>=g.target && g.target>0;
+          const left = Math.max(0, g.target - g.saved);
+          return `
+            <div class="wish">
+              <div class="wish-head">
+                <span class="wish-name">${g.name}</span>
+                <span class="wish-price">${fmt(g.target)} ₽</span>
+                <button class="shop-edit no-toggle" data-edit-goal="${g.id}" aria-label="Редактировать">✎</button>
+                <button class="wish-del" data-del-goal="${g.id}" aria-label="Удалить">×</button>
+              </div>
+              <div class="wish-progress-track"><span class="wish-progress-fill ${done?'done':''}" style="width:${pct}%"></span></div>
+              <div class="wish-info">
+                <span class="wish-saved">Накоплено: ${fmt(g.saved||0)} ₽ (${pct.toFixed(0)}%)</span>
+                <span>${done? '' : 'осталось '+fmt(left)+' ₽'}</span>
+              </div>
+              ${done? '<div class="wish-done-badge">✓ Цель достигнута!</div>' : `
+                <div class="wish-add-row">
+                  <input type="number" inputmode="decimal" placeholder="отложить сумму" data-goal-input="${g.id}">
+                  <button data-goal-add="${g.id}">Отложить</button>
+                </div>`}
+              ${g.person? `<div style="margin-top:6px"><span class="tag person">${g.person}</span></div>`:''}
+            </div>`;
+        }).join('');
+
+    body = `
+      <div class="tb-section-title">Цели, на&nbsp;которые копим</div>
+      <form class="add" id="goalForm">
+        <div class="full"><label>Финансовая цель</label><input type="text" id="gName" placeholder="напр., подушка безопасности" required></div>
+        <div><label>Цель, ₽</label><input type="number" id="gTarget" step="0.01" min="0" required></div>
+        <button type="submit" class="submit">Добавить цель</button>
+      </form>
+      <div class="list">${goalsListHtml}</div>
+      ${goals.length? `<div class="totals" style="margin-top:12px">
+        <div class="row2"><span>Всего накоплено</span><span class="pos">${fmt(totalGoalSaved)} ₽</span></div>
+        <div class="row2 total"><span>Общая цель</span><span>${fmt(totalGoalTarget)} ₽</span></div>
+      </div>` : ''}
+    `;
+  }
+
+  return monthNav + subtabs + body + ((financeSub==='expenses'||financeSub==='income') ? totalsBox : '');
+}
+
+/* ============ РЕНДЕР: СПИСОК ПОКУПОК ============ */
+function renderShoppingTab(){
+  const me = getDevicePerson();
+  const boughtSum = shopping.filter(s=>s.bought && s.price).reduce((sum,s)=>sum+(s.qty||1)*s.price,0);
+  const boughtCount = shopping.filter(s=>s.bought).length;
+
+  const grouped = {};
+  shopping.forEach(s=>{ (grouped[s.category] = grouped[s.category]||[]).push(s); });
+
+  let listHtml='';
+  if(shopping.length===0){
+    listHtml = '<div class="empty">Список пуст. Добавьте товары ниже.</div>';
+  } else {
+    listHtml = Object.entries(grouped).map(([cat,items])=>`
+      <div class="date-header">${cat}</div>
+      ${items.map(s=>{
+        const qty = s.qty||1;
+        const lineTotal = qty*(s.price||0);
+        const canDelete = s.person===me;
+        return `
+        <div class="shop-row">
+          <div class="shop-item ${s.bought?'bought':'notbought'}" data-toggle="${s.id}">
+            <div class="shop-check">${s.bought?'✓':''}</div>
+            <div class="shop-main">
+              <div class="shop-name-row">
+                <span class="shop-name">${s.name}</span>
+                <button class="shop-edit no-toggle" data-edit="${s.id}" aria-label="Переименовать">✎</button>
+              </div>
+              <span class="shop-cat">${s.person||''}</span>
+            </div>
+            <div class="shop-controls no-toggle">
+              <div class="qty-stepper">
+                <button data-qty-minus="${s.id}" aria-label="Меньше">–</button>
+                <span class="qty-val">${qty}</span>
+                <button data-qty-plus="${s.id}" aria-label="Больше">+</button>
+              </div>
+              <input class="shop-price-input" type="number" inputmode="decimal" placeholder="цена/шт" value="${s.price!=null?s.price:''}" data-price="${s.id}">
+              ${qty>1 && s.price? `<span class="shop-line-total">${fmt(lineTotal)} ₽</span>`:''}
+            </div>
+          </div>
+          ${canDelete? `<button class="shop-del-tile" data-del-shop="${s.id}" aria-label="Удалить">×</button>` : ''}
+        </div>
+      `;}).join('')}
+    `).join('');
+  }
+
+  const historyChips = shopHistory.length ? `
+    <div class="tb-section-title">Из&nbsp;истории</div>
+    <div class="chips">
+      ${shopHistory.map(h=>`
+        <span class="chip">
+          <button type="button" class="chip-add" data-quick-add="${h.name}" data-quick-cat="${h.category}">${h.name}</button>
+          <button type="button" class="chip-del" data-del-history="${h.name}" aria-label="Удалить из истории">×</button>
+        </span>
+      `).join('')}
+    </div>
+  ` : '';
+
+  return `
+    <form class="add" id="shopForm">
+      <div class="full"><label>Что купить</label>
+        <input type="text" id="sName" list="shopHistoryList" placeholder="напр., молоко" required autocomplete="off">
+        <datalist id="shopHistoryList">${shopHistory.map(h=>`<option value="${h.name}">`).join('')}</datalist>
+      </div>
+      <div><label>Категория</label><select id="sCategory">${SHOP_CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select></div>
+      <div><label>Количество</label>
+        <div class="qty-stepper" style="width:100%">
+          <button type="button" id="sQtyMinus" aria-label="Меньше">–</button>
+          <span class="qty-val" id="sQtyVal">1</span>
+          <button type="button" id="sQtyPlus" aria-label="Больше">+</button>
+        </div>
+        <input type="hidden" id="sQty" value="1">
+      </div>
+      <button type="submit" class="submit">Добавить в список</button>
+    </form>
+    ${historyChips}
+    ${lastShoppingList.length? `<button class="reset" id="restoreLastList" style="margin-bottom:14px">Добавить прошлый список (${lastShoppingList.length})</button>` : ''}
+    <div class="list">${listHtml}</div>
+    <div class="totals">
+      <div class="row2"><span>Куплено позиций</span><span>${boughtCount} из ${shopping.length}</span></div>
+      <div class="row2 total"><span>Потрачено (куплено)</span><span>${fmt(boughtSum)} ₽</span></div>
+    </div>
+    ${boughtCount>0? '<button class="reset" id="clearBought">Убрать купленные из списка</button>':''}
+  `;
+}
+
+/* ============ РЕНДЕР: ЖЕЛАНИЯ / КОПИЛКА ============ */
+/* ============ РЕНДЕР: ЦЕЛИ ============ */
+/* ============ РЕНДЕР: ИСТОРИЯ ============ */
+function renderHistoryTab(){
+  let merged = [
+    ...expenses.map(e=>({...e, kind:'exp'})),
+    ...incomes.map(e=>({...e, kind:'inc'}))
+  ].sort((a,b)=> a.date < b.date ? 1 : a.date > b.date ? -1 : 0);
+
+  if(histFilterPerson){
+    merged = merged.filter(r=>r.person===histFilterPerson);
+  }
+  if(histFilterCategory){
+    merged = merged.filter(r=>r.category===histFilterCategory);
+  }
+  if(histFilterText.trim()){
+    const q = histFilterText.trim().toLowerCase();
+    merged = merged.filter(r=>{
+      const inNote = r.note && r.note.toLowerCase().includes(q);
+      const inCat = r.category && r.category.toLowerCase().includes(q);
+      return inNote || inCat;
+    });
+  }
+
+  const allCats = [...new Set([...expenses.map(e=>e.category), ...incomes.map(e=>e.category)])];
+
+  const filterHtml = `
+    <form class="add" id="histFilterForm" style="margin-bottom:14px">
+      <div class="full"><label>Поиск (заметка, категория)</label><input type="text" id="histText" placeholder="напр., отпуск" value="${histFilterText}"></div>
+      <div><label>Кто</label><select id="histPerson">
+        <option value="">Все</option>
+        ${PEOPLE.map(p=>`<option value="${p}" ${histFilterPerson===p?'selected':''}>${p}</option>`).join('')}
+      </select></div>
+      <div><label>Категория</label><select id="histCategory">
+        <option value="">Все</option>
+        ${allCats.map(c=>`<option value="${c}" ${histFilterCategory===c?'selected':''}>${c}</option>`).join('')}
+      </select></div>
+    </form>
+  `;
+
+  if(merged.length===0){
+    return filterHtml + '<div class="empty">Ничего не найдено.</div>';
+  }
+
+  let lastLabel = null;
+  const listHtml = merged.map(r=>{
+    const label = dateLabel(r.date);
+    const headerHtml = label!==lastLabel ? `<div class="date-header">${label}</div>` : '';
+    lastLabel = label;
+    const isExp = r.kind==='exp';
+    return `
+      ${headerHtml}
+      <div class="row-entry">
+        <div class="row">
+          <span class="date">${shortDate(r.date)}</span>
+          <span class="desc">
+            <span class="cat">${r.category}</span>
+            ${r.note? `<span class="note">${r.note}</span>`:''}
+          </span>
+          <span class="leader"></span>
+          <span class="amount" style="color:${isExp?'var(--rust)':'var(--forest)'}">${isExp?'−':'+'}${fmt(r.amount)} ₽</span>
+          <button class="del" data-hist-del="${r.kind}:${r.id}" aria-label="Удалить">×</button>
+        </div>
+        <div class="row-meta">
+          ${r.person? `<span class="tag person">${r.person}</span>`:''}
+          ${isExp && r.expType? `<span class="tag">${r.expType}</span>`:''}
+        </div>
+      </div>
+    `;
+  }).join('');
+
+  const totalExpAll = merged.filter(r=>r.kind==='exp').reduce((s,e)=>s+e.amount,0);
+  const totalIncAll = merged.filter(r=>r.kind==='inc').reduce((s,e)=>s+e.amount,0);
+
+  return filterHtml + `
+    <div class="list">${listHtml}</div>
+    <div class="totals">
+      <div class="row2"><span>Всего доходов</span><span class="pos">+${fmt(totalIncAll)} ₽</span></div>
+      <div class="row2 total"><span>Всего расходов</span><span class="neg">−${fmt(totalExpAll)} ₽</span></div>
+    </div>
+  `;
+}
+
+/* ============ ГЛАВНЫЙ РЕНДЕР ============ */
+function renderLimitModal(){
+  const ym = todayStr().slice(0,7);
+  const monthExp = expenses.filter(e=>monthOf(e.date)===ym);
+  const spentByCat = {};
+  monthExp.forEach(e=>{ spentByCat[e.category]=(spentByCat[e.category]||0)+e.amount; });
+  const limitEntries = Object.entries(categoryLimits);
+
+  return `
+    <div class="modal-overlay" id="limitModalOverlay">
+      <div class="modal-box">
+        <div class="row" style="margin-bottom:12px">
+          <div class="tb-title" style="margin:0">Лимиты по категориям</div>
+          <button type="button" id="closeLimitModal" style="margin-left:auto;background:none;border:none;font-size:20px;color:var(--ink-soft);cursor:pointer;">×</button>
+        </div>
+        ${limitEntries.length===0? '<div class="empty" style="padding:6px 0">Лимиты не заданы</div>' : limitEntries.map(([cat,lim])=>{
+          const spent = spentByCat[cat]||0;
+          const pct = lim>0? Math.min(100,(spent/lim*100)) : 0;
+          const over = spent>lim;
+          return `
+            <div class="bd-row">
+              <span class="bd-label">${cat}</span>
+              <span class="bd-bar-track"><span class="bd-bar-fill" style="width:${pct.toFixed(0)}%;background:${over?'var(--rust)':'var(--copper)'}"></span></span>
+              <span class="bd-amount" style="${over?'color:var(--rust)':''}">${fmt(spent)}/${fmt(lim)} ₽</span>
+            </div>`;
+        }).join('')}
+        <div class="row" style="gap:6px;margin-top:12px">
+          <select id="limCategory" style="flex:1;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">${CATEGORIES.map(c=>`<option>${c}</option>`).join('')}</select>
+          <input type="number" id="limAmount" placeholder="лимит, ₽" style="width:90px;font-size:12px;padding:6px;border:1px solid var(--line);border-radius:6px;">
+          <button type="button" id="limSaveBtn" class="buy-btn">Задать</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function render(){
+  const card = document.getElementById('card');
+  if(firstLoad){ card.innerHTML = '<div class="loading">Подключение к базе данных…</div>'; return; }
+
+  const totalExpAll = expenses.reduce((s,e)=>s+e.amount,0);
+  const totalIncAll = incomes.reduce((s,e)=>s+e.amount,0);
+  const balance = totalIncAll - totalExpAll;
+
+  const paceYm = todayStr().slice(0,7);
+  const paceExp = expenses.filter(e=>monthOf(e.date)===paceYm).reduce((s,e)=>s+e.amount,0);
+  const paceInc = incomes.filter(e=>monthOf(e.date)===paceYm).reduce((s,e)=>s+e.amount,0);
+  const paceDaysInMonth = new Date(parseInt(paceYm.slice(0,4)), parseInt(paceYm.slice(5,7)), 0).getDate();
+  const paceDayNow = parseInt(todayStr().slice(8,10),10);
+  const paceDaysLeft = Math.max(1, paceDaysInMonth - paceDayNow + 1);
+  const paceSuggested = Math.max(0, (paceInc - paceExp) / paceDaysLeft);
+
+  let content = '';
+  if(activeTab==='home') content = renderHomeTab();
+  else if(activeTab==='finance') content = renderFinanceTab();
+  else if(activeTab==='shopping') content = renderShoppingTab();
+  else if(activeTab==='accounts') content = renderAccountsTab();
+  else if(activeTab==='calculator') content = renderCalculatorTab();
+  else content = renderHistoryTab();
+
+  card.innerHTML = `
+    <button id="enablePush" class="bell-btn" aria-label="Включить уведомления">🔔</button>
+    <button id="openHistory" class="bell-btn history-btn" aria-label="История">📜</button>
+    <h1>Гроссбух</h1>
+    <div class="sub">семейный бюджет</div>
+    <div class="sync-status ${connected?'':'offline'}">${connected?'● синхронизировано':'○ нет связи с базой'}</div>
+    ${saveError? '<div class="sync-status offline">⚠ Не удалось сохранить — проверьте интернет и повторите</div>' : ''}
+    <div class="sync-status">Вы: <b>${getDevicePerson()}</b> · <a href="#" id="changePerson" style="color:var(--copper-text)">сменить</a></div>
+    <div class="balance-bar">
+      <span>Общий баланс</span>
+      <span class="balance-val ${balance<0?'neg':'pos'}">${balance>=0?'+':''}${fmt(balance)} ₽</span>
+    </div>
+    <div class="limit-bar">
+      <button type="button" id="openLimitModal" style="background:none;border:none;font-size:12px;text-transform:uppercase;letter-spacing:0.5px;color:var(--ink-soft);cursor:pointer;padding:0;">Лимит на сегодня ⚙</button>
+      <input type="number" id="dailyLimitInput" inputmode="decimal" placeholder="не задан" value="${dailyLimit!=null?dailyLimit:''}">
+    </div>
+    <div class="sync-status" style="margin-top:-10px">Рекомендуем: ~${fmt(paceSuggested)} ₽/день до конца месяца</div>
+    ${showLimitModal? renderLimitModal() : ''}
+    <div class="tabs">
+      <button class="tab ${activeTab==='home'?'active':''}" id="tabHome">Главная</button>
+      <button class="tab ${activeTab==='finance'?'active':''}" id="tabFinance">Финансы</button>
+      <button class="tab ${activeTab==='shopping'?'active':''}" id="tabShopping">Покупки</button>
+      <button class="tab ${activeTab==='accounts'?'active':''}" id="tabAccounts">Счета</button>
+      <button class="tab ${activeTab==='calculator'?'active':''}" id="tabCalculator">Калькулятор</button>
+    </div>
+    ${content}
+  `;
+
+  document.getElementById('enablePush').onclick = ()=>{
+    const devicePerson = getDevicePerson();
+    if(window.OneSignalDeferred){
+      window.OneSignalDeferred.push(function(OneSignal){
+        OneSignal.User.PushSubscription.optIn();
+        setTimeout(()=>{ OneSignal.User.addTag('person', devicePerson); }, 1500);
+      });
+    }
+  };
+  document.getElementById('changePerson').onclick = (ev)=>{ ev.preventDefault(); changeDevicePerson(); };
+  document.getElementById('openLimitModal').onclick = ()=>{ showLimitModal = true; render(); };
+  const closeModalBtn = document.getElementById('closeLimitModal');
+  if(closeModalBtn) closeModalBtn.onclick = ()=>{ showLimitModal = false; render(); };
+  const overlay = document.getElementById('limitModalOverlay');
+  if(overlay) overlay.onclick = (ev)=>{ if(ev.target===overlay){ showLimitModal=false; render(); } };
+  const limBtnGlobal = document.getElementById('limSaveBtn');
+  if(limBtnGlobal) limBtnGlobal.onclick = ()=>{
+    const cat = document.getElementById('limCategory').value;
+    const val = parseFloat(document.getElementById('limAmount').value);
+    if(!val || val<=0) return;
+    setCategoryLimit(cat, val);
+  };
+  const dlGlobal = document.getElementById('dailyLimitInput');
+  dlGlobal.onchange = ()=>{
+    const v = parseFloat(dlGlobal.value);
+    setDailyLimit(dlGlobal.value===''||isNaN(v) ? null : v);
+  };
+
+  document.getElementById('tabHome').onclick = ()=>switchTab('home');
+  document.getElementById('tabFinance').onclick = ()=>switchTab('finance');
+  document.getElementById('tabShopping').onclick = ()=>switchTab('shopping');
+  document.getElementById('tabAccounts').onclick = ()=>switchTab('accounts');
+  document.getElementById('tabCalculator').onclick = ()=>switchTab('calculator');
+  document.getElementById('openHistory').onclick = (ev)=>{ ev.preventDefault(); switchTab('history'); };
+
+  if(activeTab==='home'){
+    // дашборд без интерактивных элементов
+  } else if(activeTab==='finance'){
+    document.getElementById('prevMonth').onclick = ()=>{ viewMonth = shiftMonth(viewMonth,-1); render(); };
+    document.getElementById('nextMonth').onclick = ()=>{ viewMonth = shiftMonth(viewMonth,1); render(); };
+    document.getElementById('subExp').onclick = ()=>switchSub('expenses');
+    document.getElementById('subInc').onclick = ()=>switchSub('income');
+    document.getElementById('subCredits').onclick = ()=>switchSub('credits');
+    document.getElementById('subSavings').onclick = ()=>switchSub('savings');
+    const tDay = document.getElementById('trendDay');
+    const tMonth = document.getElementById('trendMonth');
+    const tYear = document.getElementById('trendYear');
+    if(tDay) tDay.onclick = ()=>{ trendGranularity='day'; render(); };
+    if(tMonth) tMonth.onclick = ()=>{ trendGranularity='month'; render(); };
+    if(tYear) tYear.onclick = ()=>{ trendGranularity='year'; render(); };
+    card.querySelectorAll('[data-del-credit]').forEach(b=> b.onclick=()=>deleteCredit(b.getAttribute('data-del-credit')));
+    card.querySelectorAll('[data-pay-credit]').forEach(b=> b.onclick=()=>payCreditNow(b.getAttribute('data-pay-credit')));
+
+    if(financeSub==='expenses'){
+      const f = document.getElementById('addForm');
+      f.onsubmit = (ev)=>{
+        ev.preventDefault();
+        const amount = parseFloat(document.getElementById('amount').value);
+        if(!amount || amount<=0) return;
+        addExpense(amount,
+          document.getElementById('category').value,
+          document.getElementById('note').value.trim(),
+          document.getElementById('date').value || todayStr(),
+          document.getElementById('place').value.trim(),
+          'Карта',
+          document.getElementById('recurring').value,
+          getDevicePerson(),
+          document.getElementById('expAccount').value || null,
+          document.getElementById('expType').value,
+          (document.getElementById('expCredit')? document.getElementById('expCredit').value : '') || null);
+      };
+      card.querySelectorAll('[data-del-exp]').forEach(b=> b.onclick=()=>deleteExpense(b.getAttribute('data-del-exp')));
+    } else if(financeSub==='income'){
+      const f = document.getElementById('incomeForm');
+      f.onsubmit = (ev)=>{
+        ev.preventDefault();
+        const amount = parseFloat(document.getElementById('iAmount').value);
+        if(!amount || amount<=0) return;
+        addIncome(amount,
+          document.getElementById('iCategory').value,
+          document.getElementById('iNote').value.trim(),
+          document.getElementById('iDate').value || todayStr(),
+          getDevicePerson(),
+          document.getElementById('incAccount').value || null);
+      };
+      card.querySelectorAll('[data-del-inc]').forEach(b=> b.onclick=()=>deleteIncome(b.getAttribute('data-del-inc')));
+    } else if(financeSub==='credits'){
+      const crForm = document.getElementById('creditForm');
+      crForm.onsubmit = (ev)=>{
+        ev.preventDefault();
+        const name = document.getElementById('crName').value.trim();
+        const total = parseFloat(document.getElementById('crTotal').value);
+        const rate = parseFloat(document.getElementById('crRate').value);
+        const payment = parseFloat(document.getElementById('crPayment').value);
+        const day = parseInt(document.getElementById('crDay').value,10) || 1;
+        if(!name || isNaN(total) || isNaN(payment)) return;
+        addCredit(document.getElementById('crPerson').value, name, document.getElementById('crType').value, total, isNaN(rate)?null:rate, payment, day);
+      };
+    } else if(financeSub==='savings'){
+      document.getElementById('goalForm').onsubmit = (ev)=>{
+        ev.preventDefault();
+        const name = document.getElementById('gName').value.trim();
+        const target = parseFloat(document.getElementById('gTarget').value);
+        if(!name || !target || target<=0) return;
+        addGoal(name, target, getDevicePerson());
+      };
+      card.querySelectorAll('[data-del-goal]').forEach(b=> b.onclick=()=>deleteGoal(b.getAttribute('data-del-goal')));
+      card.querySelectorAll('[data-edit-goal]').forEach(b=> b.onclick=()=>editGoal(b.getAttribute('data-edit-goal')));
+      card.querySelectorAll('[data-goal-add]').forEach(b=>{
+        b.onclick = ()=>{
+          const id = b.getAttribute('data-goal-add');
+          const inp = card.querySelector(`[data-goal-input="${id}"]`);
+          const v = parseFloat(inp.value);
+          if(!v || v<=0) return;
+          addToGoal(id, v);
+        };
+      });
+    }
+  } else if(activeTab==='shopping'){
+    document.getElementById('shopForm').onsubmit = (ev)=>{
+      ev.preventDefault();
+      const name = document.getElementById('sName').value.trim();
+      if(!name) return;
+      const qty = parseInt(document.getElementById('sQty').value,10) || 1;
+      addShopItem(name, document.getElementById('sCategory').value, getDevicePerson(), qty);
+      document.getElementById('sQty').value = '1';
+    };
+    const qtyValEl = document.getElementById('sQtyVal');
+    const qtyInputEl = document.getElementById('sQty');
+    document.getElementById('sQtyMinus').onclick = ()=>{
+      const v = Math.max(1, parseInt(qtyInputEl.value,10)-1);
+      qtyInputEl.value = v; qtyValEl.textContent = v;
+    };
+    document.getElementById('sQtyPlus').onclick = ()=>{
+      const v = parseInt(qtyInputEl.value,10)+1;
+      qtyInputEl.value = v; qtyValEl.textContent = v;
+    };
+    card.querySelectorAll('[data-quick-add]').forEach(b=>{
+      b.onclick = ()=> addShopItem(b.getAttribute('data-quick-add'), b.getAttribute('data-quick-cat'), getDevicePerson(), 1);
+    });
+    card.querySelectorAll('[data-del-history]').forEach(b=>{
+      b.onclick = ()=> deleteShopHistoryItem(b.getAttribute('data-del-history'));
+    });
+    card.querySelectorAll('.shop-item').forEach(el=>{
+      el.addEventListener('click', (ev)=>{
+        if(ev.target.closest('.no-toggle')) return;
+        toggleBought(el.getAttribute('data-toggle'));
+      });
+    });
+    card.querySelectorAll('[data-del-shop]').forEach(b=> b.onclick=()=>deleteShopItem(b.getAttribute('data-del-shop')));
+    card.querySelectorAll('[data-edit]').forEach(b=> b.onclick=()=>renameShopItem(b.getAttribute('data-edit')));
+    card.querySelectorAll('[data-qty-minus]').forEach(b=> b.onclick=()=>changeShopQty(b.getAttribute('data-qty-minus'), -1));
+    card.querySelectorAll('[data-qty-plus]').forEach(b=> b.onclick=()=>changeShopQty(b.getAttribute('data-qty-plus'), 1));
+    card.querySelectorAll('[data-price]').forEach(inp=>{
+      inp.onchange = ()=>{
+        const v = parseFloat(inp.value);
+        setShopPrice(inp.getAttribute('data-price'), isNaN(v)? null : v);
+      };
+    });
+    const cb = document.getElementById('clearBought');
+    if(cb) cb.onclick = clearBoughtShop;
+    const rl = document.getElementById('restoreLastList');
+    if(rl) rl.onclick = restoreLastShoppingList;
+  } else if(activeTab==='accounts'){
+    card.querySelectorAll('[data-del-account]').forEach(b=> b.onclick=()=>deleteAccount(b.getAttribute('data-del-account')));
+    document.getElementById('accountForm').onsubmit = (ev)=>{
+      ev.preventDefault();
+      const owner = document.getElementById('accOwner').value;
+      const bank = document.getElementById('accBank').value.trim();
+      const balance = parseFloat(document.getElementById('accBalance').value);
+      if(!bank || isNaN(balance)) return;
+      addAccount(owner, bank, balance);
+    };
+    document.getElementById('archiveBtn').onclick = archiveOldData;
+  } else if(activeTab==='calculator'){
+    document.getElementById('calcSubBasic').onclick = ()=>{ calculatorSub='basic'; render(); };
+    document.getElementById('calcSubWeight').onclick = ()=>{ calculatorSub='weight'; render(); };
+
+    if(calculatorSub==='basic'){
+      card.querySelectorAll('[data-calc-digit]').forEach(b=> b.onclick=()=>calcInputDigit(b.getAttribute('data-calc-digit')));
+      card.querySelectorAll('[data-calc-op]').forEach(b=> b.onclick=()=>calcSetOperator(b.getAttribute('data-calc-op')));
+      const dotBtn = document.querySelector('[data-calc-dot]');
+      if(dotBtn) dotBtn.onclick = calcInputDot;
+      const clearBtn = document.querySelector('[data-calc-clear]');
+      if(clearBtn) clearBtn.onclick = calcClear;
+      const backBtn = document.querySelector('[data-calc-back]');
+      if(backBtn) backBtn.onclick = calcBackspace;
+      const eqBtn = document.querySelector('[data-calc-equals]');
+      if(eqBtn) eqBtn.onclick = calcEquals;
+    } else {
+      const measureSel = document.getElementById('wcMeasure');
+      measureSel.onchange = ()=>{ unitMeasure = measureSel.value; render(); };
+      const priceInp = document.getElementById('wcPrice');
+      const gramsInp = document.getElementById('wcGrams');
+      const updateWeightResult = ()=>{
+        unitPrice = priceInp.value;
+        unitQty = gramsInp.value;
+        const m = MEASURES[unitMeasure];
+        const price = parseFloat(unitPrice)||0;
+        const qty = parseFloat(unitQty)||0;
+        const result = (price/m.factor)*qty;
+        document.getElementById('wcResult').textContent = fmt(result) + ' ₽';
+        document.getElementById('wcGramsLabel').textContent = (qty? fmt(qty):'0') + ' ' + m.qtyUnit + ' будут стоить';
+      };
+      priceInp.oninput = updateWeightResult;
+      gramsInp.oninput = updateWeightResult;
+    }
+  } else {
+    card.querySelectorAll('[data-hist-del]').forEach(b=>{
+      b.onclick = ()=>{
+        const [kind, id] = b.getAttribute('data-hist-del').split(':');
+        if(kind==='exp') deleteExpense(id); else deleteIncome(id);
+      };
+    });
+    const hText = document.getElementById('histText');
+    const hPerson = document.getElementById('histPerson');
+    const hCategory = document.getElementById('histCategory');
+    const hForm = document.getElementById('histFilterForm');
+    if(hForm) hForm.onsubmit = (ev)=> ev.preventDefault();
+    if(hText) hText.onchange = ()=>{ histFilterText = hText.value; render(); };
+    if(hPerson) hPerson.onchange = ()=>{ histFilterPerson = hPerson.value; render(); };
+    if(hCategory) hCategory.onchange = ()=>{ histFilterCategory = hCategory.value; render(); };
+  }
+}
+</script>
+</body>
+</html>
